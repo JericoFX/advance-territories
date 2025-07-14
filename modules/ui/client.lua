@@ -1,31 +1,7 @@
-local QBCore = exports['qb-core']:GetCoreObject()
-local showingUI = false
+-- This module has been deprecated in favor of ox_lib events
+-- UI functionality moved to zones module with onEnter/onExit/inside callbacks
 
-CreateThread(function()
-    while true do
-        Wait(1000)
-        
-        local currentZone = GetCurrentZone()
-        if currentZone and not showingUI then
-            local territory = Territories[currentZone]
-            if territory then
-                showingUI = true
-                lib.showTextUI(locale('zone_info', territory.control, territory.influence), {
-                    position = 'top-center',
-                    icon = 'shield-halved',
-                    style = {
-                        borderRadius = 0,
-                        backgroundColor = '#141517',
-                        color = 'white'
-                    }
-                })
-            end
-        elseif not currentZone and showingUI then
-            showingUI = false
-            lib.hideTextUI()
-        end
-    end
-end)
+local QBCore = exports['qb-core']:GetCoreObject()
 
 -- Police blip for drug sales
 RegisterNetEvent('territories:client:policeBlip', function(coords)

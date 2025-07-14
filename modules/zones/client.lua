@@ -2,6 +2,29 @@ local Zones = {}
 local currentZone = nil
 local blips = {}
 local sync = require 'modules.sync.client'
+local uiShown = false
+
+local function showTerritoryUI(territory)
+    if not uiShown then
+        uiShown = true
+        lib.showTextUI(locale('zone_info', territory.control, territory.influence), {
+            position = 'top-center',
+            icon = 'shield-halved',
+            style = {
+                borderRadius = 0,
+                backgroundColor = '#141517',
+                color = 'white'
+            }
+        })
+    end
+end
+
+local function hideTerritoryUI()
+    if uiShown then
+        uiShown = false
+        lib.hideTextUI()
+    end
+end
 
 local function createZone(id, data)
     local territory = data
@@ -13,6 +36,7 @@ local function createZone(id, data)
             debug = Config.Debug,
             onEnter = function()
                 currentZone = id
+                showTerritoryUI(territory)
                 TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
@@ -22,9 +46,24 @@ local function createZone(id, data)
             end,
             onExit = function()
                 currentZone = nil
+                hideTerritoryUI()
                 TriggerEvent('territories:client:exitedZone', id)
                 lib.callback('territories:exitZone', false, function(success)
                 end, id)
+            end,
+            inside = function()
+                if uiShown and territory then
+                    lib.hideTextUI()
+                    lib.showTextUI(locale('zone_info', territory.control, territory.influence), {
+                        position = 'top-center',
+                        icon = 'shield-halved',
+                        style = {
+                            borderRadius = 0,
+                            backgroundColor = '#141517',
+                            color = 'white'
+                        }
+                    })
+                end
             end
         })
     elseif territory.zone.type == 'box' then
@@ -35,6 +74,7 @@ local function createZone(id, data)
             debug = Config.Debug,
             onEnter = function()
                 currentZone = id
+                showTerritoryUI(territory)
                 TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
@@ -44,9 +84,24 @@ local function createZone(id, data)
             end,
             onExit = function()
                 currentZone = nil
+                hideTerritoryUI()
                 TriggerEvent('territories:client:exitedZone', id)
                 lib.callback('territories:exitZone', false, function(success)
                 end, id)
+            end,
+            inside = function()
+                if uiShown and territory then
+                    lib.hideTextUI()
+                    lib.showTextUI(locale('zone_info', territory.control, territory.influence), {
+                        position = 'top-center',
+                        icon = 'shield-halved',
+                        style = {
+                            borderRadius = 0,
+                            backgroundColor = '#141517',
+                            color = 'white'
+                        }
+                    })
+                end
             end
         })
     end
