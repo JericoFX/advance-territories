@@ -1,6 +1,8 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.client'
 local capturePoints = {}
 local captureTimers = {}
+local activeCapture = nil
 
 local function createCapturePoint(territoryId, territory)
     if not territory.capture then return end
@@ -11,10 +13,18 @@ local function createCapturePoint(territoryId, territory)
         coords = territory.capture.point,
         distance = territory.capture.radius,
         onEnter = function()
-            TriggerServerEvent('territories:server:enterCaptureZone', territoryId)
+            lib.callback('territories:enterCaptureZone', false, function(success)
+                if success then
+                    TriggerEvent('territories:client:inCaptureZone', territoryId)
+                end
+            end, territoryId)
         end,
         onExit = function()
-            TriggerServerEvent('territories:server:exitCaptureZone', territoryId)
+            lib.callback('territories:exitCaptureZone', false, function(success)
+                if success then
+                    TriggerEvent('territories:client:leftCaptureZone', territoryId)
+                end
+            end, territoryId)
         end
     })
 end
@@ -71,15 +81,14 @@ RegisterNetEvent('territories:client:captureStarted', function(territoryId, gang
     })
 end)
 
-RegisterNetEvent('territories:client:updateCaptureProgress', function(territoryId, gang, progress)
+RegisterNetEvent('territories:client:captureProgressUpdated', function(territoryId, data)
     local territory = Territories[territoryId]
     if not territory then return end
     
-    if captureTimers[territoryId] then
-        lib.notify({
-            title = locale('capture_progress'),
-            description = locale('capture_progress_update', gang, territory.label, progress),
-            type = 'inform'
+    if activeCapture == territoryId and data then
+        local gangName = data.gang
+        lib.showTextUI(locale('capturing_progress'):format(data.progress, gangName), {
+            position = 'top-center'
         })
     end
 end)
@@ -124,4 +133,5 @@ end)
 CreateThread(function()
     Wait(1000)
     createCapturePoints()
+    sync.requestCaptureState()
 end)

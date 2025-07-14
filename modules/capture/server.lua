@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 local captureProgress = {}
 local playersInCaptureZones = {}
 local captureTimers = {}
@@ -12,28 +13,28 @@ local CaptureConfig = {
 }
 
 -- Track players in capture zones
-RegisterNetEvent('territories:server:enterCaptureZone', function(territoryId)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return end
+lib.callback.register('territories:enterCaptureZone', function(source, territoryId)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
     
     local gang = Player.PlayerData.gang.name
-    if not Utils.isValidGang(gang) then return end
+    if not Utils.isValidGang(gang) then return false end
     
     if not playersInCaptureZones[territoryId] then
         playersInCaptureZones[territoryId] = {}
     end
     
-    playersInCaptureZones[territoryId][src] = gang
+    playersInCaptureZones[territoryId][source] = gang
     checkCaptureConditions(territoryId)
+    return true
 end)
 
-RegisterNetEvent('territories:server:exitCaptureZone', function(territoryId)
-    local src = source
+lib.callback.register('territories:exitCaptureZone', function(source, territoryId)
     if playersInCaptureZones[territoryId] then
-        playersInCaptureZones[territoryId][src] = nil
+        playersInCaptureZones[territoryId][source] = nil
     end
     checkCaptureConditions(territoryId)
+    return true
 end)
 
 function checkCaptureConditions(territoryId)
@@ -86,6 +87,8 @@ function startCapture(territoryId, gang)
         startTime = os.time()
     }
     
+    sync.updateCaptureProgress(territoryId, gang, 0)
+    
     -- Notify all
     TriggerClientEvent('territories:client:captureStarted', -1, territoryId, gang)
     
@@ -118,8 +121,8 @@ function updateCaptureProgress(territoryId)
     -- Update progress
     capture.progress = capture.progress + CaptureConfig.pointsPerTick
     
-    -- Notify players
-    TriggerClientEvent('territories:client:updateCaptureProgress', -1, territoryId, capture.gang, capture.progress)
+    -- Update GlobalState
+    sync.updateCaptureProgress(territoryId, capture.gang, capture.progress)
     
     -- Check if complete
     if capture.progress >= CaptureConfig.requiredProgress then
@@ -144,9 +147,9 @@ function completeCapture(territoryId)
         captureTimers[territoryId] = nil
     end
     
-    -- Update all clients
-    TriggerClientEvent('territories:client:updateControl', -1, territoryId, capture.gang)
-    TriggerClientEvent('territories:client:updateInfluence', -1, territoryId, territory.influence)
+    sync.removeCaptureProgress(territoryId)
+    sync.updateTerritoryControl(territoryId, capture.gang)
+    sync.updateTerritoryInfluence(territoryId, territory.influence)
     
     -- Notify
     TriggerClientEvent('ox_lib:notify', -1, {
@@ -179,6 +182,8 @@ function stopCapture(territoryId)
     if captureTimers[territoryId] then
         captureTimers[territoryId] = nil
     end
+    
+    sync.removeCaptureProgress(territoryId)
     
     TriggerClientEvent('ox_lib:notify', -1, {
         title = locale('capture_stopped'),
