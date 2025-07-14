@@ -4,6 +4,12 @@ A modular territory control system for FiveM using QBCore, ox_lib, and ox_invent
 
 ## Features
 
+### Synchronization System
+- **GlobalState Integration**: Real-time territory state synchronization using FiveM's GlobalState
+- **ox_lib Callbacks**: Replaced network events with efficient callback system
+- **StateBag Support**: Player and vehicle state tracking through entity statebags
+- **Optimized Network Traffic**: Reduced network overhead with smart state updates
+
 - **Dynamic Territory Creation**: Create territories in-game as polygon or box zones
 - **Automatic Capture System**: Territories captured automatically based on gang presence
 - **Zone Management**: Polygon and box zones with automatic player tracking
@@ -17,11 +23,11 @@ A modular territory control system for FiveM using QBCore, ox_lib, and ox_invent
 
 ## Dependencies
 
-- qb-core
-- ox_lib
+- ox_lib (v3.0.0+) - Required for callbacks, zones, and UI
 - ox_inventory
-- oxmysql
 - ox_target
+- qb-core
+- oxmysql
 
 ## Installation
 

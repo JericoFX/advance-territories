@@ -1,26 +1,30 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 local playersInZones = {}
 
-RegisterNetEvent('territories:server:enteredZone', function(zoneId)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return end
+lib.callback.register('territories:enterZone', function(source, zoneId)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
     
-    playersInZones[src] = zoneId
+    playersInZones[source] = zoneId
+    sync.updatePlayerZone(source, zoneId)
     
-    TriggerEvent('territories:server:playerEnteredZone', src, zoneId)
+    TriggerEvent('territories:server:playerEnteredZone', source, zoneId)
+    return true
 end)
 
-RegisterNetEvent('territories:server:exitedZone', function(zoneId)
-    local src = source
-    playersInZones[src] = nil
+lib.callback.register('territories:exitZone', function(source, zoneId)
+    playersInZones[source] = nil
+    sync.updatePlayerZone(source, nil)
     
-    TriggerEvent('territories:server:playerExitedZone', src, zoneId)
+    TriggerEvent('territories:server:playerExitedZone', source, zoneId)
+    return true
 end)
 
 AddEventHandler('playerDropped', function()
     local src = source
     playersInZones[src] = nil
+    sync.updatePlayerZone(src, nil)
 end)
 
 ---@param zoneId string

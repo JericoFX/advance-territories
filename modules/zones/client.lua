@@ -1,6 +1,7 @@
 local Zones = {}
 local currentZone = nil
 local blips = {}
+local sync = require 'modules.sync.client'
 
 local function createZone(id, data)
     local territory = data
@@ -13,12 +14,17 @@ local function createZone(id, data)
             onEnter = function()
                 currentZone = id
                 TriggerEvent('territories:client:enteredZone', id)
-                TriggerServerEvent('territories:server:enteredZone', id)
+                lib.callback('territories:enterZone', false, function(success)
+                    if not success then
+                        currentZone = nil
+                    end
+                end, id)
             end,
             onExit = function()
                 currentZone = nil
                 TriggerEvent('territories:client:exitedZone', id)
-                TriggerServerEvent('territories:server:exitedZone', id)
+                lib.callback('territories:exitZone', false, function(success)
+                end, id)
             end
         })
     elseif territory.zone.type == 'box' then
@@ -30,12 +36,17 @@ local function createZone(id, data)
             onEnter = function()
                 currentZone = id
                 TriggerEvent('territories:client:enteredZone', id)
-                TriggerServerEvent('territories:server:enteredZone', id)
+                lib.callback('territories:enterZone', false, function(success)
+                    if not success then
+                        currentZone = nil
+                    end
+                end, id)
             end,
             onExit = function()
                 currentZone = nil
                 TriggerEvent('territories:client:exitedZone', id)
-                TriggerServerEvent('territories:server:exitedZone', id)
+                lib.callback('territories:exitZone', false, function(success)
+                end, id)
             end
         })
     end
@@ -69,22 +80,11 @@ CreateThread(function()
         createZone(id, territory)
         createBlip(id, territory)
     end
+    sync.setBlips(blips)
+    sync.requestTerritoriesState()
 end)
 
-RegisterNetEvent('territories:client:updateControl', function(territoryId, gang)
-    local territory = Territories[territoryId]
-    if territory then
-        territory.control = gang
-        updateBlipColor(territoryId, gang)
-    end
-end)
-
-RegisterNetEvent('territories:client:updateInfluence', function(territoryId, influence)
-    local territory = Territories[territoryId]
-    if territory then
-        territory.influence = influence
-    end
-end)
+-- State updates are now handled by GlobalState in sync module
 
 -- Global functions for internal use
 function GetCurrentZone()

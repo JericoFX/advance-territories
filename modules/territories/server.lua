@@ -1,11 +1,12 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 
 local function updateTerritoryControl(zoneId, newGang)
     local territory = Territories[zoneId]
     if not territory then return end
     
     territory.control = newGang
-    TriggerClientEvent('territories:client:updateControl', -1, zoneId, newGang)
+    sync.updateTerritoryControl(zoneId, newGang)
     
     -- Database update
     MySQL.update('UPDATE territories SET control = ? WHERE zone_id = ?', {newGang, zoneId})
@@ -16,7 +17,7 @@ local function adjustTerritoryInfluence(zoneId, amount)
     if not territory then return end
     
     territory.influence = math.max(territory.influence + amount, Config.Territory.control.minInfluence)
-    TriggerClientEvent('territories:client:updateInfluence', -1, zoneId, territory.influence)
+    sync.updateTerritoryInfluence(zoneId, territory.influence)
     
     -- Database update
     MySQL.update('UPDATE territories SET influence = ? WHERE zone_id = ?', {territory.influence, zoneId})
@@ -51,6 +52,9 @@ local function checkGangPresence(zoneId)
 end
 
 CreateThread(function()
+    Wait(1000)
+    sync.initializeTerritories()
+    
     while true do
         Wait(Config.Territory.influenceTick)
         for zoneId, territory in pairs(Territories) do
