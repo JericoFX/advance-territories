@@ -14,6 +14,7 @@ shared_scripts {
 }
 
 client_scripts {
+    'modules/target/client.lua',
     'modules/zones/client.lua',
     'modules/territories/client.lua',
     'modules/capture/client.lua',
@@ -36,6 +37,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'modules/sync/server.lua',
     'modules/zones/server.lua',
     'modules/territories/server.lua',
     'modules/capture/server.lua',

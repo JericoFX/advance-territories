@@ -5,20 +5,14 @@ local function loadModel(model)
     local hash = GetHashKey(model)
     if not IsModelValid(hash) then return nil end
     
-    RequestModel(hash)
-    while not HasModelLoaded(hash) do
-        Wait(10)
-    end
+    lib.requestModel(hash)
     return hash
 end
 
 local function loadAnimDict(dict)
     if not DoesAnimDictExist(dict) then return false end
     
-    RequestAnimDict(dict)
-    while not HasAnimDictLoaded(dict) do
-        Wait(10)
-    end
+    lib.requestAnimDict(dict)
     return true
 end
 
@@ -56,19 +50,13 @@ local function startProcessingScene(processData)
     
     -- Start particle effects for drug labs
     if sceneType == 'Meth' then
-        RequestNamedPtfxAsset("core")
-        while not HasNamedPtfxAssetLoaded("core") do
-            Wait(10)
-        end
+        lib.requestNamedPtfxAsset("core")
         UseParticleFxAssetNextCall("core")
         local particle = StartParticleFxLoopedAtCoord("ent_amb_smoke_factory_white", location.x, location.y, location.z + 1.0, 0.0, 0.0, 0.0, 0.5, false, false, false, false)
         SetParticleFxLoopedAlpha(particle, 0.8)
         sceneObjects.particle = particle
     elseif sceneType == 'Cocaine' then
-        RequestNamedPtfxAsset("core")
-        while not HasNamedPtfxAssetLoaded("core") do
-            Wait(10)
-        end
+        lib.requestNamedPtfxAsset("core")
         UseParticleFxAssetNextCall("core")
         local particle = StartParticleFxLoopedAtCoord("ent_amb_smoke_general", location.x, location.y, location.z + 0.5, 0.0, 0.0, 0.0, 0.3, false, false, false, false)
         sceneObjects.particle = particle

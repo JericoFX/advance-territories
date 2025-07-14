@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local target = require 'modules.target.client'
 local territoryTargets = {}
 
 local function createTerritoryTargets()
@@ -7,7 +8,7 @@ local function createTerritoryTargets()
             -- Stash Target
             if territory.features.stash and Config.Stash.enabled then
                 local targetId = ('%s_stash'):format(territoryId)
-                territoryTargets[targetId] = exports.ox_target:addSphereZone({
+                territoryTargets[targetId] = target.addSphereZone({
                     coords = territory.features.stash.coords,
                     radius = 1.5,
                     debug = Config.Debug,
@@ -31,7 +32,7 @@ local function createTerritoryTargets()
             -- Garage Target
             if territory.features.garage and Config.Garage.enabled then
                 local targetId = ('%s_garage'):format(territoryId)
-                territoryTargets[targetId] = exports.ox_target:addSphereZone({
+                territoryTargets[targetId] = target.addSphereZone({
                     coords = territory.features.garage.coords,
                     radius = 2.0,
                     debug = Config.Debug,
@@ -55,7 +56,7 @@ local function createTerritoryTargets()
             -- Process Target
             if territory.features.process and Config.Processing.enabled then
                 local targetId = ('%s_process'):format(territoryId)
-                territoryTargets[targetId] = exports.ox_target:addSphereZone({
+                territoryTargets[targetId] = target.addSphereZone({
                     coords = territory.features.process.coords,
                     radius = 1.5,
                     debug = Config.Debug,
@@ -79,63 +80,11 @@ local function createTerritoryTargets()
     end
 end
 
-RegisterNetEvent('territories:client:enteredZone', function(zoneId)
-    local territory = Territories[zoneId]
-    if not territory then return end
-    
-    lib.showTextUI(locale('entered_territory', territory.label), {
-        position = 'top-center',
-        icon = 'shield-halved',
-        style = {
-            borderRadius = 0,
-            backgroundColor = '#141517',
-            color = 'white'
-        }
-    })
-    
-    SetTimeout(3000, function()
-        lib.hideTextUI()
-    end)
-end)
+-- Zone enter/exit notifications are handled in zones module
 
-RegisterNetEvent('territories:client:exitedZone', function(zoneId)
-    local territory = Territories[zoneId]
-    if not territory then return end
-    
-    lib.notify({
-        title = locale('territory'),
-        description = locale('left_territory', territory.label),
-        type = 'inform'
-    })
-end)
-
+-- Create targets immediately when module loads
 CreateThread(function()
-    Wait(1000)
     createTerritoryTargets()
 end)
 
--- UI Updates
-CreateThread(function()
-    while true do
-        Wait(1000)
-        
-        local currentZone = exports[GetCurrentResourceName()]:getCurrentZone()
-        if currentZone then
-            local territory = Territories[currentZone]
-            if territory then
-                SendNUIMessage({
-                    action = 'updateTerritory',
-                    data = {
-                        name = territory.label,
-                        control = territory.control,
-                        influence = territory.influence
-                    }
-                })
-            end
-        else
-            SendNUIMessage({
-                action = 'hideTerritory'
-            })
-        end
-    end
-end)
+-- UI is handled by ox_lib in zones module

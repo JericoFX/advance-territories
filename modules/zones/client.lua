@@ -37,16 +37,35 @@ local function createZone(id, data)
             onEnter = function()
                 currentZone = id
                 showTerritoryUI(territory)
+                
+                -- Show entry notification
+                lib.notify({
+                    title = locale('territory'),
+                    description = locale('entered_territory', territory.label),
+                    type = 'inform',
+                    position = 'top',
+                    duration = 3000
+                })
+                
                 TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
                         currentZone = nil
+                        hideTerritoryUI()
                     end
                 end, id)
             end,
             onExit = function()
                 currentZone = nil
                 hideTerritoryUI()
+                
+                -- Show exit notification
+                lib.notify({
+                    title = locale('territory'),
+                    description = locale('left_territory', territory.label),
+                    type = 'inform'
+                })
+                
                 TriggerEvent('territories:client:exitedZone', id)
                 lib.callback('territories:exitZone', false, function(success)
                 end, id)
@@ -75,16 +94,35 @@ local function createZone(id, data)
             onEnter = function()
                 currentZone = id
                 showTerritoryUI(territory)
+                
+                -- Show entry notification
+                lib.notify({
+                    title = locale('territory'),
+                    description = locale('entered_territory', territory.label),
+                    type = 'inform',
+                    position = 'top',
+                    duration = 3000
+                })
+                
                 TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
                         currentZone = nil
+                        hideTerritoryUI()
                     end
                 end, id)
             end,
             onExit = function()
                 currentZone = nil
                 hideTerritoryUI()
+                
+                -- Show exit notification
+                lib.notify({
+                    title = locale('territory'),
+                    description = locale('left_territory', territory.label),
+                    type = 'inform'
+                })
+                
                 TriggerEvent('territories:client:exitedZone', id)
                 lib.callback('territories:exitZone', false, function(success)
                 end, id)

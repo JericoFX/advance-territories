@@ -78,7 +78,30 @@ function GetPlayerZone(src)
     return playersInZones[src]
 end
 
+---@param gang string
+---@return table
+function GetGangMembers(gang)
+    local members = {}
+    local players = QBCore.Functions.GetPlayers()
+    
+    for _, playerId in ipairs(players) do
+        local Player = QBCore.Functions.GetPlayer(playerId)
+        if Player and Player.PlayerData.gang.name == gang then
+            members[#members + 1] = {
+                source = playerId,
+                citizenid = Player.PlayerData.citizenid,
+                grade = Player.PlayerData.gang.grade.level,
+                firstname = Player.PlayerData.charinfo.firstname,
+                lastname = Player.PlayerData.charinfo.lastname
+            }
+        end
+    end
+    
+    return members
+end
+
 exports('GetPlayersInZone', GetPlayersInZone)
 exports('GetGangMembersInZone', GetGangMembersInZone)
 exports('GetPoliceInZone', GetPoliceInZone)
 exports('GetPlayerZone', GetPlayerZone)
+exports('GetGangMembers', GetGangMembers)
