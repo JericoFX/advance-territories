@@ -5,7 +5,7 @@ RegisterNetEvent('territories:server:startSelling', function(territoryId)
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
     
-    local territory = Territories[territoryId]
+    local territory = GlobalState.territories[territoryId]
     if not territory or not territory.drugs then return end
     
     local hasDrugs = false
@@ -36,7 +36,7 @@ RegisterNetEvent('territories:server:sellDrugs', function()
     local territoryId = GetPlayerZone(src)
     if not territoryId then return end
     
-    local territory = Territories[territoryId]
+    local territory = GlobalState.territories[territoryId]
     if not territory or not territory.drugs then return end
     
     local gang = Player.PlayerData.gang.name
@@ -83,6 +83,62 @@ RegisterNetEvent('territories:server:sellDrugs', function()
     })
 end)
 
+lib.callback.register('territories:sellDrugsToNPC', function(source, territoryId)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return false, locale('error') end
+    
+    local territory = GlobalState.territories[territoryId]
+    if not territory or not territory.drugs then
+        return false, locale('no_drugs_allowed')
+    end
+    
+    local gang = Player.PlayerData.gang.name
+    if gang == 'none' then
+        return false, locale('no_gang')
+    end
+    
+    local priceMultiplier = 1.0
+    if territory.control == gang then
+        priceMultiplier = Config.Gangs.territoryBonus.drugPrice
+    elseif territory.control ~= 'neutral' then
+        priceMultiplier = 0.7
+    end
+    
+    for _, drug in ipairs(territory.drugs) do
+        local amount = math.random(Config.DrugSales.amount.min, Config.DrugSales.amount.max)
+        local playerAmount = exports.ox_inventory:GetItem(src, drug, nil, true)
+        
+        if playerAmount >= amount then
+            local priceData = Config.DrugSales.prices[drug]
+            if priceData then
+                local policeCount = Utils.getPoliceCount()
+                local heatMultiplier = 1.0
+                
+                if policeCount >= Config.Police.minOnDuty then
+                    heatMultiplier = 0.8
+                end
+                
+                local basePrice = math.random(priceData.min, priceData.max)
+                local finalPrice = math.floor(basePrice * amount * priceMultiplier * heatMultiplier)
+                
+                if exports.ox_inventory:RemoveItem(src, drug, amount) then
+                    Player.Functions.AddMoney('cash', finalPrice)
+                    
+                    if Config.Economy.enabled and Config.Economy.tax.drugSale > 0 then
+                        local tax = math.floor(finalPrice * Config.Economy.tax.drugSale)
+                        TriggerEvent('territories:server:addTerritoryMoney', territoryId, tax)
+                    end
+                    
+                    return true, locale('drug_sale_success', amount, drug, finalPrice)
+                end
+            end
+        end
+    end
+    
+    return false, locale('no_drugs')
+end)
+
 RegisterNetEvent('territories:server:reportDrugSale', function(coords)
     local players = QBCore.Functions.GetPlayers()
     
@@ -95,7 +151,6 @@ RegisterNetEvent('territories:server:reportDrugSale', function(coords)
                 type = 'error'
             })
             
-            -- Create blip for police
             TriggerClientEvent('territories:client:policeBlip', playerId, coords)
         end
     end

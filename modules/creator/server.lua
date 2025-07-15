@@ -17,6 +17,7 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
             label = data.name,
             control = 'neutral',
             influence = 0,
+            drugs = data.drugs or {},
             zone = {
                 type = data.type,
                 points = data.points,
@@ -26,17 +27,22 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
                 rotation = data.rotation
             },
             capture = {
-                point = data.type == 'poly' and getPolygonCenter(data.points) or data.coords,
-                radius = 20.0
+                point = data.capture and data.capture.point or (data.type == 'poly' and getPolygonCenter(data.points) or data.coords),
+                radius = data.capture and data.capture.radius or 20.0
             },
-            features = {},
-            businesses = {}
+            features = data.features or {},
+            businesses = data.businesses or {}
         }
         
         -- Save to database
         MySQL.update('UPDATE territories SET data = ? WHERE zone_id = ?', {
             json.encode(territoryData), territoryId
         })
+        
+        -- Update GlobalState
+        local territories = GlobalState.territories or {}
+        territories[territoryId] = territoryData
+        GlobalState.territories = territories
         
         -- Update all clients
         TriggerClientEvent('territories:client:addTerritory', -1, territoryId, territoryData)

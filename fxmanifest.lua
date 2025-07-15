@@ -29,6 +29,7 @@ client_scripts {
     'modules/delivery/client.lua',
     'modules/police/client.lua',
     'modules/arrest/client.lua',
+    'modules/laboratory/client.lua',
     'modules/ui/client.lua',
     'modules/admin/client.lua',
     'modules/creator/client.lua',
@@ -50,6 +51,7 @@ server_scripts {
     'modules/delivery/server.lua',
     'modules/police/server.lua',
     'modules/buckets/server.lua',
+    'modules/laboratory/server.lua',
     'modules/admin/server.lua',
     'modules/creator/server.lua',
     'server/init.lua'

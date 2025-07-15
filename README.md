@@ -14,11 +14,12 @@ A modular territory control system for FiveM using QBCore, ox_lib, and ox_invent
 - **Automatic Capture System**: Territories captured automatically based on gang presence
 - **Zone Management**: Polygon and box zones with automatic player tracking
 - **Drug Processing**: Different drug types with synchronized scenes and animations
+- **NPC Drug Sales**: Sell drugs to NPCs using ox_target interaction system
 - **Bucket System**: Gang members process drugs in separate instances (no collisions)
 - **Economy System**: Territory income from businesses with tax collection
 - **Stash System**: Gang-specific stashes with transfer on capture
 - **Garage System**: Territory-based vehicle storage
-- **Police Integration**: Police presence affects territory control
+- **Police Integration**: Police presence affects territory control and drug pricing
 - **IPL Loading**: Automatic loading of drug lab interiors with bucket separation
 
 ## Dependencies
@@ -51,7 +52,17 @@ A modular territory control system for FiveM using QBCore, ox_lib, and ox_invent
 - **Stash**: Access gang-specific storage
 - **Garage**: Store and retrieve vehicles
 - **Processing**: Process drugs with animated scenes
-- **Drug Sales**: Automatic drug selling in controlled territories
+- **Drug Sales**: Interact with NPCs using ox_target or use `/selldrugs` command
+
+### Drug Sales System
+- **NPC Interaction**: Use ox_target to sell drugs to any NPC
+- **Territory Control**: Better prices when selling in controlled territories
+- **Police Heat**: Drug prices affected by police presence
+- **Automatic Mode**: `/selldrugs` command for continuous selling
+- **Police Reports**: NPCs may report drug sales to police
+- **Commands**:
+  - `/selldrugs` - Start selling drugs to nearby NPCs
+  - `/stopselling` - Stop the automatic selling mode
 
 ### Configuration
 

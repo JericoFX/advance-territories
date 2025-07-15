@@ -62,3 +62,24 @@ lib.addCommand('neutralize', {
         })
     end
 end)
+
+RegisterNetEvent('territories:client:policeBlip', function(coords)
+    local Player = QBCore.Functions.GetPlayerData()
+    if not Player.job or not Utils.isPoliceJob(Player.job.name) then return end
+    
+    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+    SetBlipSprite(blip, 161)
+    SetBlipDisplay(blip, 4)
+    SetBlipScale(blip, 0.8)
+    SetBlipColour(blip, 1)
+    SetBlipAsShortRange(blip, false)
+    BeginTextCommandSetBlipName('STRING')
+    AddTextComponentSubstringPlayerName(locale('drug_activity'))
+    EndTextCommandSetBlipName(blip)
+    
+    SetTimeout(60000, function()
+        if DoesBlipExist(blip) then
+            RemoveBlip(blip)
+        end
+    end)
+end)
