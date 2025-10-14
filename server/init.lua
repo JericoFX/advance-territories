@@ -33,9 +33,8 @@ MySQL.ready(function()
 end)
 
 function loadTerritories()
-    -- Clear existing territories
-    Territories = {}
-    
+    Territories = Territories or {}
+
     local territories = MySQL.query.await('SELECT * FROM territories')
     
     for _, data in ipairs(territories) do
@@ -84,7 +83,7 @@ RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServer
         local killerGang = killerPlayer.PlayerData.gang.name
         
         if Utils.isValidGang(victimGang) and Utils.isValidGang(killerGang) and victimGang ~= killerGang then
-            TriggerEvent('territories:server:playerDeath', zoneId, killerGang)
+            TriggerEvent('territories:server:onPlayerDeath', zoneId, killerGang)
         end
     end
 end)

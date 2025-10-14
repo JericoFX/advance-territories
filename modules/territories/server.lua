@@ -64,10 +64,10 @@ CreateThread(function()
 end)
 
 --- On player death within a territory, update influence
-RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerGang)
+RegisterNetEvent('territories:server:onPlayerDeath', function(zoneId, killerGang)
     local territory = Territories[zoneId]
     if not territory then return end
-    
+
     if territory.control ~= killerGang then
         adjustTerritoryInfluence(zoneId, Config.Territory.control.pointsPerKill)
     end
