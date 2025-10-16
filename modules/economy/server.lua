@@ -45,32 +45,34 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
     lastCollection[cooldownKey] = os.time()
     
     if Config.Economy.collection.distribution then
-        local gangMembers = QBCore.Functions.GetGangMembers(gang)
+        local gangMembers = GetGangMembers(gang)
         local onlineMembers = {}
         local totalShares = 0
-        
+
         for citizenid, member in pairs(gangMembers) do
-            if member.isOnline then
-                local grade = member.grade.level
-                local shares = Config.Economy.gradeShares[grade] or 0.1
+            if member.isOnline and member.source then
+                local gradeLevel = member.grade and member.grade.level or member.grade or 0
+                local shares = Config.Economy.gradeShares[gradeLevel] or 0.1
                 totalShares = totalShares + shares
-                table.insert(onlineMembers, {
-                    source = QBCore.Functions.GetPlayerByCitizenId(citizenid).PlayerData.source,
+                onlineMembers[#onlineMembers + 1] = {
+                    source = member.source,
                     shares = shares
-                })
+                }
             end
         end
-        
-        for _, member in ipairs(onlineMembers) do
-            local memberShare = math.floor(income * (member.shares / totalShares))
-            local memberPlayer = QBCore.Functions.GetPlayer(member.source)
-            if memberPlayer then
-                memberPlayer.Functions.AddMoney('cash', memberShare)
-                TriggerClientEvent('ox_lib:notify', member.source, {
-                    title = locale('territory_income'),
-                    description = locale('collected_income', memberShare),
-                    type = 'success'
-                })
+
+        if totalShares > 0 then
+            for _, memberData in ipairs(onlineMembers) do
+                local memberShare = math.floor(income * (memberData.shares / totalShares))
+                local memberPlayer = QBCore.Functions.GetPlayer(memberData.source)
+                if memberPlayer then
+                    memberPlayer.Functions.AddMoney('cash', memberShare)
+                    TriggerClientEvent('ox_lib:notify', memberData.source, {
+                        title = locale('territory_income'),
+                        description = locale('collected_income', memberShare),
+                        type = 'success'
+                    })
+                end
             end
         end
     else

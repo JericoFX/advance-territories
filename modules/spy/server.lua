@@ -41,13 +41,10 @@ function spawnSpy(territoryId)
     }
     
     -- Notify gang members
-    local gangMembers = QBCore.Functions.GetGangMembers(territory.control)
+    local gangMembers = GetGangMembers(territory.control)
     for citizenid, member in pairs(gangMembers) do
-        if member.isOnline then
-            local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-            if player then
-                TriggerClientEvent('territories:client:spawnSpy', player.PlayerData.source, spyPos, territoryId)
-            end
+        if member.isOnline and member.source then
+            TriggerClientEvent('territories:client:spawnSpy', member.source, spyPos, territoryId)
         end
     end
     
@@ -70,13 +67,10 @@ function spyEscaped(territoryId)
     TriggerClientEvent('territories:client:updateInfluence', -1, territoryId, territory.influence)
     
     -- Notify gang
-    local gangMembers = QBCore.Functions.GetGangMembers(territory.control)
+    local gangMembers = GetGangMembers(territory.control)
     for citizenid, member in pairs(gangMembers) do
-        if member.isOnline then
-            local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-            if player then
-                TriggerClientEvent('territories:client:spyEscaped', player.PlayerData.source)
-            end
+        if member.isOnline and member.source then
+            TriggerClientEvent('territories:client:spyEscaped', member.source)
         end
     end
     

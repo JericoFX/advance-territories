@@ -210,13 +210,15 @@ function alertPolice(territoryId)
 end
 
 function rewardCapturers(territoryId, gang)
-    local gangMembers = QBCore.Functions.GetGangMembers(gang)
-    
+    local gangMembers = GetGangMembers(gang)
+
     for citizenid, member in pairs(gangMembers) do
-        if member.isOnline then
-            local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-            if player and GetPlayerZone(player.PlayerData.source) == territoryId then
-                player.Functions.AddMoney('cash', Config.Rewards.capture.money)
+        if member.isOnline and member.source then
+            if GetPlayerZone(member.source) == territoryId then
+                local player = QBCore.Functions.GetPlayer(member.source)
+                if player then
+                    player.Functions.AddMoney('cash', Config.Rewards.capture.money)
+                end
             end
         end
     end
