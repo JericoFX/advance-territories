@@ -1,5 +1,16 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+local function ensureZoneCenter(territory)
+    if not territory then return end
+
+    territory.zone = territory.zone or {}
+
+    local center = Utils.getTerritoryCenter(territory)
+    if center then
+        territory.zone.center = center
+    end
+end
+
 -- Database initialization
 MySQL.ready(function()
     MySQL.query([[
@@ -46,17 +57,20 @@ function loadTerritories()
                 Territories[data.zone_id].control = data.control
                 Territories[data.zone_id].influence = data.influence
                 Territories[data.zone_id].treasury = data.treasury or 0
+                ensureZoneCenter(Territories[data.zone_id])
             end
         elseif Territories[data.zone_id] then
             -- Legacy support for hardcoded territories
             Territories[data.zone_id].control = data.control
             Territories[data.zone_id].influence = data.influence
             Territories[data.zone_id].treasury = data.treasury or 0
+            ensureZoneCenter(Territories[data.zone_id])
         end
     end
-    
+
     -- Insert missing territories
     for zoneId, territory in pairs(Territories) do
+        ensureZoneCenter(territory)
         local exists = false
         for _, data in ipairs(territories) do
             if data.zone_id == zoneId then

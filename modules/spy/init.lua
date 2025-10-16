@@ -16,13 +16,16 @@ local SpyConfig = {
 local function spawnSpy(territoryId)
     local territory = Territories[territoryId]
     if not territory then return end
-    
+
     if territory.control == 'neutral' then return end
-    
+
+    local center = Utils.getTerritoryCenter(territory) or (territory.capture and territory.capture.point)
+    if not center then return end
+
     local spawnPoint = vec3(
-        territory.zone.center.x + math.random(-50, 50),
-        territory.zone.center.y + math.random(-50, 50),
-        territory.zone.center.z
+        center.x + math.random(-50, 50),
+        center.y + math.random(-50, 50),
+        center.z
     )
     
     local model = GetHashKey(SpyConfig.models[math.random(#SpyConfig.models)])

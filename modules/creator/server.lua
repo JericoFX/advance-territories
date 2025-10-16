@@ -5,13 +5,23 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
     if not QBCore.Functions.HasPermission(src, 'admin') then return end
     
     local territoryId = ('%s_%s'):format(data.name:lower():gsub(' ', '_'), os.time())
-    
+
     -- Create territory in database
     local id = MySQL.insert.await('INSERT INTO territories (zone_id, control, influence) VALUES (?, ?, ?)', {
         territoryId, 'neutral', 0
     })
-    
+
     if id then
+        local tempTerritory = {
+            zone = {
+                type = data.type,
+                points = data.points,
+                coords = data.coords
+            }
+        }
+
+        local defaultCenter = Utils.getTerritoryCenter(tempTerritory) or data.coords
+
         -- Create territory data
         local territoryData = {
             label = data.name,
@@ -27,13 +37,15 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
                 rotation = data.rotation
             },
             capture = {
-                point = data.capture and data.capture.point or (data.type == 'poly' and getPolygonCenter(data.points) or data.coords),
+                point = data.capture and data.capture.point or defaultCenter,
                 radius = data.capture and data.capture.radius or 20.0
             },
             features = data.features or {},
             businesses = data.businesses or {}
         }
-        
+
+        territoryData.zone.center = Utils.getTerritoryCenter(territoryData) or territoryData.capture.point or data.coords
+
         -- Save to database
         MySQL.update('UPDATE territories SET data = ? WHERE zone_id = ?', {
             json.encode(territoryData), territoryId
@@ -54,13 +66,3 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
         })
     end
 end)
-
-function getPolygonCenter(points)
-    local x, y, z = 0, 0, 0
-    for _, point in ipairs(points) do
-        x = x + point.x
-        y = y + point.y
-        z = z + point.z
-    end
-    return vec3(x / #points, y / #points, z / #points)
-end
