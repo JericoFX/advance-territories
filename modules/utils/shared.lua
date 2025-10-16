@@ -49,6 +49,44 @@ function Utils.getBlipColor(gang)
     return Config.Blips.colors[gang] or Config.Blips.colors.neutral
 end
 
+---@param territory table
+---@return vector3|nil
+function Utils.getTerritoryCenter(territory)
+    if not territory or not territory.zone then
+        return territory and territory.capture and territory.capture.point or nil
+    end
+
+    if territory.zone.center then
+        return territory.zone.center
+    end
+
+    if territory.zone.type == 'box' and territory.zone.coords then
+        return territory.zone.coords
+    end
+
+    if territory.zone.type == 'poly' and type(territory.zone.points) == 'table' then
+        local totalX, totalY, totalZ = 0.0, 0.0, 0.0
+        local count = 0
+
+        for _, point in ipairs(territory.zone.points) do
+            totalX = totalX + point.x
+            totalY = totalY + point.y
+            totalZ = totalZ + point.z
+            count = count + 1
+        end
+
+        if count > 0 then
+            return vec3(totalX / count, totalY / count, totalZ / count)
+        end
+    end
+
+    if territory.capture and territory.capture.point then
+        return territory.capture.point
+    end
+
+    return nil
+end
+
 exports('Utils', function()
     return Utils
 end)

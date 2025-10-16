@@ -27,15 +27,18 @@ local MissionConfig = {
 local function generateVIPMission(territoryId)
     local territory = Territories[territoryId]
     if not territory then return nil end
-    
+
+    local center = Utils.getTerritoryCenter(territory) or (territory.capture and territory.capture.point)
+    if not center then return nil end
+
     local pickupPoints = {
-        vec4(territory.zone.center.x + math.random(-50, 50), territory.zone.center.y + math.random(-50, 50), territory.zone.center.z, 0.0),
-        vec4(territory.zone.center.x + math.random(-75, 75), territory.zone.center.y + math.random(-75, 75), territory.zone.center.z, 0.0)
+        vec4(center.x + math.random(-50, 50), center.y + math.random(-50, 50), center.z, 0.0),
+        vec4(center.x + math.random(-75, 75), center.y + math.random(-75, 75), center.z, 0.0)
     }
-    
+
     local dropoffPoints = {
-        vec4(territory.zone.center.x + math.random(-100, 100), territory.zone.center.y + math.random(-100, 100), territory.zone.center.z, 0.0),
-        vec4(territory.zone.center.x + math.random(-125, 125), territory.zone.center.y + math.random(-125, 125), territory.zone.center.z, 0.0)
+        vec4(center.x + math.random(-100, 100), center.y + math.random(-100, 100), center.z, 0.0),
+        vec4(center.x + math.random(-125, 125), center.y + math.random(-125, 125), center.z, 0.0)
     }
     
     return {
@@ -52,18 +55,21 @@ end
 local function generateInterceptMission(territoryId)
     local territory = Territories[territoryId]
     if not territory then return nil end
-    
+
+    local center = Utils.getTerritoryCenter(territory) or (territory.capture and territory.capture.point)
+    if not center then return nil end
+
     local spawnPoints = {
-        vec4(territory.zone.center.x + math.random(-200, 200), territory.zone.center.y + math.random(-200, 200), territory.zone.center.z, 0.0),
-        vec4(territory.zone.center.x + math.random(-250, 250), territory.zone.center.y + math.random(-250, 250), territory.zone.center.z, 0.0)
+        vec4(center.x + math.random(-200, 200), center.y + math.random(-200, 200), center.z, 0.0),
+        vec4(center.x + math.random(-250, 250), center.y + math.random(-250, 250), center.z, 0.0)
     }
-    
+
     return {
         type = 'intercept_delivery',
         territoryId = territoryId,
         spawn = spawnPoints[math.random(#spawnPoints)],
-        destination = vec4(territory.zone.center.x + math.random(-300, 300), territory.zone.center.y + math.random(-300, 300), territory.zone.center.z, 0.0),
-        return_point = vec4(territory.zone.center.x, territory.zone.center.y, territory.zone.center.z, 0.0),
+        destination = vec4(center.x + math.random(-300, 300), center.y + math.random(-300, 300), center.z, 0.0),
+        return_point = vec4(center.x, center.y, center.z, 0.0),
         vehicleModel = MissionConfig.intercept.vehicleModels[math.random(#MissionConfig.intercept.vehicleModels)],
         reward = MissionConfig.intercept.reward,
         timeLimit = MissionConfig.intercept.timeLimit
@@ -73,13 +79,16 @@ end
 local function generateDefenseMission(territoryId)
     local territory = Territories[territoryId]
     if not territory then return nil end
-    
+
+    local center = Utils.getTerritoryCenter(territory) or (territory.capture and territory.capture.point)
+    if not center then return nil end
+
     local enemyCount = math.random(MissionConfig.defense.enemyCount.min, MissionConfig.defense.enemyCount.max)
-    
+
     return {
         type = 'npc_attack',
         territoryId = territoryId,
-        location = vec3(territory.zone.center.x, territory.zone.center.y, territory.zone.center.z),
+        location = vec3(center.x, center.y, center.z),
         enemyCount = enemyCount,
         enemyModels = MissionConfig.defense.enemyModels,
         reward = MissionConfig.defense.reward,
