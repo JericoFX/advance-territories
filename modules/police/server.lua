@@ -37,18 +37,15 @@ RegisterNetEvent('territories:server:neutralizeTerritory', function(territoryId)
     })
     
     -- Alert gang
-    local gangMembers = QBCore.Functions.GetGangMembers(oldGang)
+    local gangMembers = GetGangMembers(oldGang)
     for citizenid, member in pairs(gangMembers) do
-        if member.isOnline then
-            local gangPlayer = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-            if gangPlayer then
-                TriggerClientEvent('ox_lib:notify', gangPlayer.PlayerData.source, {
-                    title = locale('territory_lost'),
-                    description = locale('police_took_territory', territory.label),
-                    type = 'error',
-                    duration = 15000
-                })
-            end
+        if member.isOnline and member.source then
+            TriggerClientEvent('ox_lib:notify', member.source, {
+                title = locale('territory_lost'),
+                description = locale('police_took_territory', territory.label),
+                type = 'error',
+                duration = 15000
+            })
         end
     end
     

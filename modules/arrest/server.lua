@@ -25,18 +25,15 @@ RegisterNetEvent('territories:server:playerArrested', function(territoryId)
         TriggerClientEvent('territories:client:updateInfluence', -1, territoryId, territory.influence)
         
         -- Notify gang members
-        local gangMembers = QBCore.Functions.GetGangMembers(gang)
+        local gangMembers = GetGangMembers(gang)
         for citizenid, member in pairs(gangMembers) do
-            if member.isOnline then
-                local gangPlayer = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-                if gangPlayer then
-                    TriggerClientEvent('ox_lib:notify', gangPlayer.PlayerData.source, {
-                        title = locale('arrest_penalty'),
-                        description = locale('member_arrested_penalty', Player.PlayerData.charinfo.firstname, ArrestConfig.influencePenalty),
-                        type = 'error',
-                        duration = 8000
-                    })
-                end
+            if member.isOnline and member.source then
+                TriggerClientEvent('ox_lib:notify', member.source, {
+                    title = locale('arrest_penalty'),
+                    description = locale('member_arrested_penalty', Player.PlayerData.charinfo.firstname, ArrestConfig.influencePenalty),
+                    type = 'error',
+                    duration = 8000
+                })
             end
         end
         

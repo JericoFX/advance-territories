@@ -83,20 +83,22 @@ end
 function GetGangMembers(gang)
     local members = {}
     local players = QBCore.Functions.GetPlayers()
-    
+
     for _, playerId in ipairs(players) do
         local Player = QBCore.Functions.GetPlayer(playerId)
         if Player and Player.PlayerData.gang.name == gang then
-            members[#members + 1] = {
+            local citizenid = Player.PlayerData.citizenid
+            members[citizenid] = {
                 source = playerId,
-                citizenid = Player.PlayerData.citizenid,
-                grade = Player.PlayerData.gang.grade.level,
+                citizenid = citizenid,
+                grade = Player.PlayerData.gang.grade,
+                isOnline = true,
                 firstname = Player.PlayerData.charinfo.firstname,
                 lastname = Player.PlayerData.charinfo.lastname
             }
         end
     end
-    
+
     return members
 end
 
