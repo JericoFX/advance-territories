@@ -31,6 +31,9 @@
     "not_enough_police": "Need at least %d police officers on duty",
     
     "capture_available": "Press [E] to capture",
+    "territory_capture": "Territory Capture",
+    "capture_started_time": "%s capture started (%d min)",
+    "capture_duration_ended": "Capture timer finished without completing control",
     "capturing_territory": "Capturing territory",
     "capturing_progress": "Capturing: %s%% - %s",
     "territory_captured": "Territory Captured",
