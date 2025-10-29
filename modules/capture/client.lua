@@ -6,9 +6,14 @@ local activeCapture = nil
 
 local function createCapturePoint(territoryId, territory)
     if not territory.capture then return end
-    
+
     local pointId = ('%s_capture'):format(territoryId)
-    
+
+    if capturePoints[pointId] then
+        capturePoints[pointId]:remove()
+        capturePoints[pointId] = nil
+    end
+
     capturePoints[pointId] = lib.points.new({
         coords = territory.capture.point,
         distance = territory.capture.radius,
@@ -59,13 +64,17 @@ RegisterNetEvent('territories:client:startCapture', function(territoryId, durati
                 position = 'top-center'
             })
         end
-        
-        lib.hideTextUI()  
-        
+
+        lib.hideTextUI()
+
         if activeCapture == territoryId then
-            TriggerServerEvent('territories:server:completeCapture', territoryId)
+            lib.notify({
+                title = locale('territory_capture'),
+                description = locale('capture_duration_ended'),
+                type = 'inform'
+            })
         end
-        
+
         activeCapture = nil
     end)
 end)
@@ -96,38 +105,6 @@ end)
 RegisterNetEvent('territories:client:addTerritory', function(territoryId, territoryData)
     Territories[territoryId] = territoryData
     createCapturePoint(territoryId, territoryData)
-    
-    -- Create zone
-    if territoryData.zone.type == 'poly' then
-        lib.zones.poly({
-            points = territoryData.zone.points,
-            thickness = territoryData.zone.thickness,
-            debug = Config.Debug,
-            onEnter = function()
-                TriggerEvent('territories:client:enteredZone', territoryId)
-                TriggerServerEvent('territories:server:enteredZone', territoryId)
-            end,
-            onExit = function()
-                TriggerEvent('territories:client:exitedZone', territoryId)
-                TriggerServerEvent('territories:server:exitedZone', territoryId)
-            end
-        })
-    elseif territoryData.zone.type == 'box' then
-        lib.zones.box({
-            coords = territoryData.zone.coords,
-            size = territoryData.zone.size,
-            rotation = territoryData.zone.rotation or 0,
-            debug = Config.Debug,
-            onEnter = function()
-                TriggerEvent('territories:client:enteredZone', territoryId)
-                TriggerServerEvent('territories:server:enteredZone', territoryId)
-            end,
-            onExit = function()
-                TriggerEvent('territories:client:exitedZone', territoryId)
-                TriggerServerEvent('territories:server:exitedZone', territoryId)
-            end
-        })
-    end
 end)
 
 CreateThread(function()
