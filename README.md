@@ -58,6 +58,10 @@ A modular territory control system for FiveM using QBCore, ox_lib, and ox_invent
 - **NPC Interaction**: Use ox_target to sell drugs to any NPC
 - **Territory Control**: Better prices when selling in controlled territories
 - **Police Heat**: Drug prices affected by police presence
+
+## Documentation
+
+- [Territory state request flow](docs/request-flow.md)
 - **Automatic Mode**: `/selldrugs` command for continuous selling
 - **Police Reports**: NPCs may report drug sales to police
 - **Commands**:
