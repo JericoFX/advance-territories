@@ -1,5 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+Territories = Territories or {}
+
 local function ensureZoneCenter(territory)
     if not territory then return end
 
@@ -44,8 +46,7 @@ MySQL.ready(function()
 end)
 
 function loadTerritories()
-    Territories = Territories or {}
-
+    
     local territories = MySQL.query.await('SELECT * FROM territories')
     
     for _, data in ipairs(territories) do
@@ -104,6 +105,8 @@ end)
 
 RegisterNetEvent('territories:server:syncTerritories', function()
     local src = source
+    if not Territories or not next(Territories) then return end
+
     for zoneId, territory in pairs(Territories) do
         TriggerClientEvent('territories:client:updateControl', src, zoneId, territory.control)
         TriggerClientEvent('territories:client:updateInfluence', src, zoneId, territory.influence)
@@ -114,11 +117,13 @@ end)
 CreateThread(function()
     while true do
         Wait(Config.Territory.saveInterval * 60000)
-        
-        for zoneId, territory in pairs(Territories) do
-            MySQL.update('UPDATE territories SET control = ?, influence = ? WHERE zone_id = ?', {
-                territory.control, territory.influence, zoneId
-            })
+
+        if Territories and next(Territories) then
+            for zoneId, territory in pairs(Territories) do
+                MySQL.update('UPDATE territories SET control = ?, influence = ? WHERE zone_id = ?', {
+                    territory.control, territory.influence, zoneId
+                })
+            end
         end
     end
 end)
