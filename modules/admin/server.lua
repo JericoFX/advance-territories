@@ -24,6 +24,19 @@ RegisterNetEvent('territories:server:adminUpdate', function(zoneId, control, inf
     
     local territory = Territories[zoneId]
     if not territory then return end
+
+    if control ~= 'neutral' and not Utils.isValidGang(control) then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('invalid_gang'),
+            type = 'error'
+        })
+        return
+    end
+
+    influence = tonumber(influence)
+    if not influence then return end
+    influence = math.min(math.max(influence, Config.Territory.control.minInfluence), Config.Territory.control.maxInfluence)
     
     territory.control = control
     territory.influence = influence

@@ -1,5 +1,12 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local activeDeliveries = {}
+local lastPoliceAlert = {}
+
+local DeliveryConfig = {
+    minDurationSeconds = 30, -- TODO: align with design/balance requirements
+    completionRadius = 12.0, -- TODO: align with client UI radius
+    policeAlertCooldownSeconds = 60 -- TODO: move to Config if needed
+}
 
 local deliveryLocations = {
     vec4(1200.0, -1276.0, 35.0, 90.0),
@@ -61,7 +68,8 @@ RegisterNetEvent('territories:server:startDelivery', function(territoryId, drugT
         drugType = drugType,
         amount = requiredAmount,
         startTime = os.time(),
-        destination = destination
+        destination = destination,
+        vehicleModel = 'burrito3'
     }
     
     -- Start delivery
@@ -77,6 +85,50 @@ RegisterNetEvent('territories:server:completeDelivery', function(drugType, amoun
     if not delivery then return end
     if delivery.drugType ~= drugType then return end
     if delivery.amount ~= amount then return end
+
+    local elapsed = os.time() - delivery.startTime
+    if elapsed < DeliveryConfig.minDurationSeconds then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('delivery_too_fast'),
+            type = 'error'
+        })
+        return
+    end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+
+    local coords = GetEntityCoords(ped)
+    if not delivery.destination or #(coords - delivery.destination) > DeliveryConfig.completionRadius then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('delivery_wrong_location'),
+            type = 'error'
+        })
+        return
+    end
+
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle == 0 then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_vehicle'),
+            type = 'error'
+        })
+        return
+    end
+
+    local expectedModel = delivery.vehicleModel and GetHashKey(delivery.vehicleModel) or nil
+    if expectedModel and GetEntityModel(vehicle) ~= expectedModel then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('wrong_vehicle'),
+            type = 'error'
+        })
+        return
+    end
+
     drugType = delivery.drugType
     amount = delivery.amount
     
@@ -134,6 +186,18 @@ RegisterNetEvent('territories:server:failDelivery', function(reason)
 end)
 
 RegisterNetEvent('territories:server:alertPoliceRaid', function(coords)
+    local src = source
+    local now = os.time()
+    local lastAlert = lastPoliceAlert[src]
+    if lastAlert and now - lastAlert < DeliveryConfig.policeAlertCooldownSeconds then
+        return
+    end
+    lastPoliceAlert[src] = now
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    coords = GetEntityCoords(ped)
+
     local players = QBCore.Functions.GetPlayers()
     
     for _, playerId in ipairs(players) do

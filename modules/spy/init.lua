@@ -82,57 +82,7 @@ local function checkSpySpawn()
     end
 end
 
-RegisterNetEvent('territories:server:catchSpy', function(territoryId)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return end
-    
-    local spy = activeSpies[territoryId]
-    if not spy then return end
-    
-    local territory = Territories[territoryId]
-    if not territory or territory.control ~= Player.PlayerData.gang.name then return end
-    
-    if not hierarchy.hasPermission(Player, 'capture_spy') then
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = locale('error'),
-            description = locale('no_permission'),
-            type = 'error'
-        })
-        return
-    end
-    
-    if math.random(100) <= SpyConfig.successChance then
-        local reward = math.random(SpyConfig.reward.min, SpyConfig.reward.max)
-        Player.Functions.AddMoney('cash', reward)
-        
-        activeSpies[territoryId] = nil
-        TriggerClientEvent('territories:client:removeSpy', -1, territoryId)
-        
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = locale('spy_caught'),
-            description = locale('spy_caught_reward', reward),
-            type = 'success'
-        })
-        
-        local gangMembers = GetGangMembers(Player.PlayerData.gang.name)
-        for _, member in pairs(gangMembers) do
-            if member.source ~= src then
-                TriggerClientEvent('ox_lib:notify', member.source, {
-                    title = locale('spy_caught'),
-                    description = locale('member_caught_spy', Player.PlayerData.charinfo.firstname),
-                    type = 'success'
-                })
-            end
-        end
-    else
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = locale('spy_escaped'),
-            description = locale('spy_got_away'),
-            type = 'error'
-        })
-    end
-end)
+-- NOTE: catchSpy handler is implemented in modules/spy/server.lua to avoid duplicate rewards.
 
 lib.callback.register('territories:getSpyInfo', function(source, territoryId)
     local spy = activeSpies[territoryId]

@@ -6,6 +6,7 @@ local missionVehicles = {}
 local missionBlips = {}
 
 local MissionConfig = {
+    completionRadius = 15.0, -- TODO: tune per mission type
     vipEscort = {
         reward = 5000,
         timeLimit = 900,
@@ -94,6 +95,36 @@ local function generateDefenseMission(territoryId)
         reward = MissionConfig.defense.reward,
         timeLimit = MissionConfig.defense.timeLimit
     }
+end
+
+local function getMissionCompletionPoint(mission)
+    if not mission then return nil end
+
+    if mission.type == 'vip_escort' then
+        return mission.dropoff
+    end
+
+    if mission.type == 'intercept_delivery' then
+        return mission.return_point
+    end
+
+    if mission.type == 'npc_attack' then
+        return mission.location
+    end
+
+    return nil
+end
+
+local function isPlayerAtMissionCompletion(src, mission)
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return false end
+
+    local point = getMissionCompletionPoint(mission)
+    if not point then return false end
+
+    local coords = GetEntityCoords(ped)
+    local target = vec3(point.x, point.y, point.z)
+    return #(coords - target) <= MissionConfig.completionRadius
 end
 
 lib.callback.register('territories:getMissions', function(source, territoryId)
@@ -209,6 +240,15 @@ RegisterNetEvent('territories:server:completeMission', function(missionType)
         return
     end
     
+    if not isPlayerAtMissionCompletion(src, mission) then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('mission_not_at_destination'),
+            type = 'error'
+        })
+        return
+    end
+
     currentMissions[src] = nil
     
     Player.Functions.AddMoney('cash', mission.reward)

@@ -21,6 +21,13 @@ RegisterNetEvent('territories:server:enterLaboratory', function(territoryId, gan
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local territory = Territories[territoryId]
+    if not territory then return end
+
+    gangName = Player.PlayerData.gang.name
+    if not Utils.isValidGang(gangName) then return end
+    if not Utils.hasAccess(territory, gangName) then return end
     
     local bucketData = getOrCreateTerritoryBucket(territoryId, gangName)
     

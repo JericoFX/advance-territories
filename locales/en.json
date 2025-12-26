@@ -48,11 +48,13 @@
     "missing_items": "You don't have the required items",
     "process_complete": "Processing complete",
     "process_cancelled": "Processing cancelled",
+    "process_not_finished": "Processing is not finished yet",
     
     "vehicle_stored": "Vehicle stored",
     "vehicle_spawned": "Vehicle spawned",
     "garage_full": "Territory garage is full",
     "no_vehicles": "No vehicles in garage",
+    "must_be_driver": "You must be the driver to store this vehicle",
     
     "drug_sale_success": "Drug sale successful",
     "drug_sale_rejected": "Offer rejected",
@@ -64,6 +66,7 @@
     "collected_income": "Collected $%d from territory businesses",
     "no_income": "No income to collect",
     "collection_cooldown": "You can collect again in %d minutes",
+    "must_be_in_territory": "You must be in the territory to do this",
     
     "create_territory_help": "Create a new territory zone",
     "already_creating": "Already creating a territory",
@@ -92,6 +95,7 @@
     "control": "Control",
     "influence": "Influence",
     "territory_updated": "Territory updated successfully",
+    "invalid_gang": "Invalid gang selection",
     
     "already_selling": "Already selling drugs",
     "selling_drugs": "Negotiating sale...",
@@ -136,6 +140,9 @@
     "delivery_failed": "Delivery Failed",
     "delivery_failed_vehicle_destroyed": "The delivery vehicle was destroyed",
     "delivery_failed_police_raid": "Police intercepted the delivery",
+    "delivery_too_fast": "Delivery completed too quickly",
+    "delivery_wrong_location": "You are not at the delivery location",
+    "wrong_vehicle": "Wrong delivery vehicle",
     "police_raid": "Police Raid!",
     "police_on_the_way": "Police are on their way! Get out of there!",
     "not_enough_drugs_delivery": "You need at least %d units to start a delivery",
@@ -199,5 +206,13 @@
     "laboratory_bucket_desc": "You are now in %s's private laboratory",
     "laboratory_exit": "Laboratory Exit",
     "laboratory_exit_desc": "Returned to main world",
-    "invalid_drug_type": "Invalid drug type selected"
+    "invalid_drug_type": "Invalid drug type selected",
+    "mission_not_at_destination": "You are not at the mission destination",
+    "invalid_data": "Invalid data provided",
+    "invalid_name": "Invalid territory name",
+    "invalid_zone_type": "Invalid zone type",
+    "invalid_zone_points": "Invalid zone points",
+    "invalid_zone_box": "Invalid zone box configuration",
+    "invalid_capture_point": "Invalid capture point",
+    "invalid_rotation": "Invalid rotation value"
 }
