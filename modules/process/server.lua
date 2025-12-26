@@ -89,7 +89,8 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     activeProcesses[src] = {
         territoryId = territoryId,
         recipeIndex = recipeIndex,
-        startedAt = os.time()
+        startedAt = GetGameTimer(),
+        duration = recipe.time
     }
     TriggerClientEvent('territories:client:startProcess', src, territoryId, recipeIndex)
 end)
@@ -102,6 +103,15 @@ RegisterNetEvent('territories:server:completeProcess', function(territoryId, rec
     local active = activeProcesses[src]
     if not active then return end
     if active.territoryId ~= territoryId or active.recipeIndex ~= recipeIndex then return end
+
+    if active.duration and GetGameTimer() - active.startedAt < active.duration then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('process_not_finished'),
+            type = 'error'
+        })
+        return
+    end
     
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end

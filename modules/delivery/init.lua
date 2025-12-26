@@ -28,7 +28,8 @@ local function startDrugDelivery(source, territoryId)
     local buyer = DeliveryConfig.buyers[math.random(#DeliveryConfig.buyers)]
     local vehicleModel = DeliveryConfig.vehicleModels[math.random(#DeliveryConfig.vehicleModels)]
 
-    TriggerClientEvent('territories:client:startDelivery', source, territoryId, buyer, vehicleModel)
+    -- TODO: implement dedicated client handler for mission deliveries to avoid conflicting with bulk delivery flow.
+    TriggerClientEvent('territories:client:startMissionDelivery', source, territoryId, buyer, vehicleModel)
 end
 
 lib.addCommand('startdelivery', {
@@ -40,7 +41,7 @@ lib.addCommand('startdelivery', {
     startDrugDelivery(source, territoryId)
 end)
 
-RegisterNetEvent('territories:server:completeDelivery', function(territoryId, success)
+RegisterNetEvent('territories:server:completeMissionDelivery', function(territoryId, success)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
@@ -63,5 +64,4 @@ RegisterNetEvent('territories:server:completeDelivery', function(territoryId, su
         })
     end
 end)
-
 

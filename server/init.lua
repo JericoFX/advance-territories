@@ -91,16 +91,37 @@ end
 RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServerId)
     local src = source
     local victimPlayer = QBCore.Functions.GetPlayer(src)
-    local killerPlayer = QBCore.Functions.GetPlayer(killerServerId)
-    
-    if victimPlayer and killerPlayer then
-        local victimGang = victimPlayer.PlayerData.gang.name
-        local killerGang = killerPlayer.PlayerData.gang.name
-        
-        if Utils.isValidGang(victimGang) and Utils.isValidGang(killerGang) and victimGang ~= killerGang then
-            TriggerEvent('territories:server:onPlayerDeath', zoneId, killerGang)
-        end
+    if not victimPlayer then return end
+
+    local playerState = Player(src) and Player(src).state
+    if not playerState or not playerState.isDead then
+        return
     end
+
+    local victimZone = GetPlayerZone(src)
+    if not victimZone then return end
+
+    local killerPlayer = QBCore.Functions.GetPlayer(killerServerId)
+    if not killerPlayer or killerServerId == src then return end
+
+    local victimGang = victimPlayer.PlayerData.gang.name
+    local killerGang = killerPlayer.PlayerData.gang.name
+
+    if not Utils.isValidGang(victimGang) or not Utils.isValidGang(killerGang) or victimGang == killerGang then
+        return
+    end
+
+    local victimPed = GetPlayerPed(src)
+    local killerPed = GetPlayerPed(killerServerId)
+    if victimPed == 0 or killerPed == 0 then return end
+
+    local victimCoords = GetEntityCoords(victimPed)
+    local killerCoords = GetEntityCoords(killerPed)
+    if #(victimCoords - killerCoords) > 200.0 then
+        return
+    end
+
+    TriggerEvent('territories:server:onPlayerDeath', victimZone, killerGang)
 end)
 
 RegisterNetEvent('territories:server:syncTerritories', function()

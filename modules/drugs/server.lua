@@ -1,4 +1,8 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local lastDrugReport = {}
+local DrugReportConfig = {
+    cooldownSeconds = 30 -- TODO: move to Config if needed
+}
 
 RegisterNetEvent('territories:server:startSelling', function(territoryId)
     local src = source
@@ -140,6 +144,18 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, territoryId
 end)
 
 RegisterNetEvent('territories:server:reportDrugSale', function(coords)
+    local src = source
+    local now = os.time()
+    local lastReport = lastDrugReport[src]
+    if lastReport and now - lastReport < DrugReportConfig.cooldownSeconds then
+        return
+    end
+    lastDrugReport[src] = now
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    coords = GetEntityCoords(ped)
+
     local players = QBCore.Functions.GetPlayers()
     
     for _, playerId in ipairs(players) do

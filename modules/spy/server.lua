@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local hierarchy = require 'modules.hierarchy'
 local activeSpies = {}
 
 -- Spy system configuration
@@ -86,6 +87,20 @@ RegisterNetEvent('territories:server:catchSpy', function(territoryId)
     
     local spy = activeSpies[territoryId]
     if not spy or spy.caught then return end
+
+    local territory = Territories[territoryId]
+    if not territory or territory.control ~= Player.PlayerData.gang.name then
+        return
+    end
+
+    if hierarchy and not hierarchy.hasPermission(Player, 'capture_spy') then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('no_permission'),
+            type = 'error'
+        })
+        return
+    end
     
     local ped = GetPlayerPed(src)
     local coords = GetEntityCoords(ped)

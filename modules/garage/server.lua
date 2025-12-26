@@ -31,6 +31,15 @@ RegisterNetEvent('territories:server:storeVehicle', function(territoryId)
     
     local vehicle = GetVehiclePedIsIn(GetPlayerPed(src), false)
     if vehicle == 0 then return end
+
+    if GetPedInVehicleSeat(vehicle, -1) ~= GetPlayerPed(src) then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_driver'),
+            type = 'error'
+        })
+        return
+    end
     
     local plate = GetVehicleNumberPlateText(vehicle)
     local props = lib.getVehicleProperties(vehicle)

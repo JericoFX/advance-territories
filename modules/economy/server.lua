@@ -5,6 +5,16 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local currentZone = GetPlayerZone(src)
+    if currentZone ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
     
     local territory = Territories[territoryId]
     if not territory then return end
