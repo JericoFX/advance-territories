@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local activeProcesses = {}
 
 local ProcessRecipes = {
     weed = {
@@ -39,6 +40,15 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    if activeProcesses[src] then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('already_processing'),
+            type = 'error'
+        })
+        return
+    end
     
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end
@@ -76,6 +86,11 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     end
     
     -- Start processing
+    activeProcesses[src] = {
+        territoryId = territoryId,
+        recipeIndex = recipeIndex,
+        startedAt = os.time()
+    }
     TriggerClientEvent('territories:client:startProcess', src, territoryId, recipeIndex)
 end)
 
@@ -83,6 +98,10 @@ RegisterNetEvent('territories:server:completeProcess', function(territoryId, rec
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local active = activeProcesses[src]
+    if not active then return end
+    if active.territoryId ~= territoryId or active.recipeIndex ~= recipeIndex then return end
     
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end
@@ -112,5 +131,14 @@ RegisterNetEvent('territories:server:completeProcess', function(territoryId, rec
     if Config.Economy.enabled and Config.Economy.tax.processing > 0 then
         local taxAmount = math.floor(100 * Config.Economy.tax.processing)
         TriggerEvent('territories:server:addTerritoryMoney', territoryId, taxAmount)
+    end
+
+    activeProcesses[src] = nil
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    if activeProcesses[src] then
+        activeProcesses[src] = nil
     end
 end)

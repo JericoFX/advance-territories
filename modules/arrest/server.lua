@@ -10,6 +10,11 @@ RegisterNetEvent('territories:server:playerArrested', function(territoryId)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local currentZone = GetPlayerZone(src)
+    if not currentZone or currentZone ~= territoryId then
+        return
+    end
     
     local territory = Territories[territoryId]
     if not territory then return end
