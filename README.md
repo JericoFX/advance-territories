@@ -1,3 +1,5 @@
+Yes a lot of IA was involved because i dont want to code for fivem anymore so i just check what an IA can do
+
 # Advanced Territories
 
 A modular territory control system for FiveM using QBCore, ox_lib, and ox_inventory.
