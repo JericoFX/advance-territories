@@ -1,4 +1,9 @@
 local resourceName = GetCurrentResourceName()
+local QBCore = nil
+
+if IsDuplicityVersion() then
+    QBCore = exports['qb-core']:GetCoreObject()
+end
 
 Utils = {}
 
@@ -85,6 +90,25 @@ function Utils.getTerritoryCenter(territory)
     end
 
     return nil
+end
+
+---@return number
+function Utils.getPoliceCount()
+    if not QBCore then
+        return 0
+    end
+
+    local count = 0
+    local players = QBCore.Functions.GetPlayers()
+
+    for _, playerId in ipairs(players) do
+        local Player = QBCore.Functions.GetPlayer(playerId)
+        if Player and Utils.isPoliceJob(Player.PlayerData.job.name) then
+            count = count + 1
+        end
+    end
+
+    return count
 end
 
 exports('Utils', function()

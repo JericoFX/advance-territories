@@ -177,6 +177,8 @@ RegisterNetEvent('territories:server:startMission', function(territoryId, missio
     
     if not missionData then return end
     
+    missionData.startedAt = os.time()
+    missionData.status = 'active'
     currentMissions[src] = missionData
     TriggerClientEvent('territories:client:startMission', src, missionType, missionData)
     
@@ -194,6 +196,18 @@ RegisterNetEvent('territories:server:completeMission', function(missionType)
     
     local mission = currentMissions[src]
     if not mission then return end
+
+    if mission.status ~= 'active' then return end
+    if mission.type ~= missionType then return end
+    if mission.timeLimit and os.time() - mission.startedAt > mission.timeLimit then
+        currentMissions[src] = nil
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('cancelled'),
+            type = 'error'
+        })
+        return
+    end
     
     currentMissions[src] = nil
     
@@ -224,6 +238,8 @@ RegisterNetEvent('territories:server:failMission', function(missionType, reason)
     
     local mission = currentMissions[src]
     if not mission then return end
+
+    if mission.type ~= missionType then return end
     
     currentMissions[src] = nil
     

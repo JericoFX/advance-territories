@@ -51,6 +51,8 @@ RegisterNetEvent('territories:server:createTerritory', function(data)
             json.encode(territoryData), territoryId
         })
         
+        Territories[territoryId] = territoryData
+
         -- Update GlobalState
         local territories = GlobalState.territories or {}
         territories[territoryId] = territoryData

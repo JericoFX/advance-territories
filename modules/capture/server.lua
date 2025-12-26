@@ -12,10 +12,25 @@ local CaptureConfig = {
     requiredProgress = 100 -- 100% to capture
 }
 
+local function isPlayerInCaptureZone(source, territoryId)
+    local territory = Territories[territoryId]
+    if not territory or not territory.capture then return false end
+
+    local ped = GetPlayerPed(source)
+    if ped == 0 then return false end
+
+    local coords = GetEntityCoords(ped)
+    return Utils.isInRadius(coords, territory.capture.point, territory.capture.radius)
+end
+
 -- Track players in capture zones
 lib.callback.register('territories:enterCaptureZone', function(source, territoryId)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return false end
+
+    if not isPlayerInCaptureZone(source, territoryId) then
+        return false
+    end
     
     local gang = Player.PlayerData.gang.name
     if not Utils.isValidGang(gang) then return false end
@@ -78,7 +93,7 @@ function startCapture(territoryId, gang)
     if not territory then return end
     
     -- Check police
-    local policeCount = QBCore.Functions.GetDutyCount('police')
+    local policeCount = Utils.getPoliceCount()
     if policeCount < Config.Police.minOnDuty then return end
     
     captureProgress[territoryId] = {
@@ -225,13 +240,17 @@ function rewardCapturers(territoryId, gang)
 end
 
 -- Death penalty
-RegisterNetEvent('territories:server:playerDeathInCapture', function(territoryId, killerGang)
+RegisterNetEvent('territories:server:playerDeathInCapture', function(territoryId)
     local capture = captureProgress[territoryId]
     if not capture then return end
     
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    if not isPlayerInCaptureZone(src, territoryId) then
+        return
+    end
     
     local victimGang = Player.PlayerData.gang.name
     

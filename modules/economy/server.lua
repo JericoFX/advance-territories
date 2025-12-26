@@ -74,6 +74,13 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
                     })
                 end
             end
+        else
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_income'),
+                type = 'error'
+            })
+            return
         end
     else
         Player.Functions.AddMoney('cash', income)
