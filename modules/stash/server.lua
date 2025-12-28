@@ -4,6 +4,15 @@ RegisterNetEvent('territories:server:openStash', function(territoryId)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
     
     local territory = Territories[territoryId]
     if not territory then return end

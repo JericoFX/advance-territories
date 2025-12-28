@@ -1,5 +1,9 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local activeProcesses = {}
+local ProcessConfig = {
+    startDistance = 3.0, -- TODO: align with target radius/config
+    completionDistance = 3.0 -- TODO: align with target radius/config
+}
 
 local ProcessRecipes = {
     weed = {
@@ -52,6 +56,31 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
+
+    local processCoords = territory.features.process.coords
+    if processCoords then
+        local ped = GetPlayerPed(src)
+        if ped ~= 0 then
+            local coords = GetEntityCoords(ped)
+            if #(coords - processCoords) > ProcessConfig.startDistance then
+                TriggerClientEvent('ox_lib:notify', src, {
+                    title = locale('error'),
+                    description = locale('must_be_in_territory'),
+                    type = 'error'
+                })
+                return
+            end
+        end
+    end
     
     local playerGang = Player.PlayerData.gang.name
     if not Utils.hasAccess(territory, playerGang) then
@@ -89,6 +118,7 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     activeProcesses[src] = {
         territoryId = territoryId,
         recipeIndex = recipeIndex,
+        processType = processType,
         startedAt = GetGameTimer(),
         duration = recipe.time
     }
@@ -117,6 +147,46 @@ RegisterNetEvent('territories:server:completeProcess', function(territoryId, rec
     if not territory or not territory.features.process then return end
     
     local processType = territory.features.process.type
+    if active.processType and active.processType ~= processType then return end
+
+    if processType == 'crack' then
+        if GetPlayerZone(src) ~= territoryId then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('must_be_in_territory'),
+                type = 'error'
+            })
+            return
+        end
+
+        local processCoords = territory.features.process.coords
+        if processCoords then
+            local ped = GetPlayerPed(src)
+            if ped ~= 0 then
+                local coords = GetEntityCoords(ped)
+                if #(coords - processCoords) > ProcessConfig.completionDistance then
+                    TriggerClientEvent('ox_lib:notify', src, {
+                        title = locale('error'),
+                        description = locale('must_be_in_territory'),
+                        type = 'error'
+                    })
+                    return
+                end
+            end
+        end
+    else
+        local gang = Player.PlayerData.gang.name
+        local expectedBucket = exports[GetCurrentResourceName()]:GetGangLabBucket(gang, processType)
+        local currentBucket = GetPlayerRoutingBucket(src)
+        if not expectedBucket or currentBucket ~= expectedBucket then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
     local recipe = ProcessRecipes[processType] and ProcessRecipes[processType][recipeIndex]
     if not recipe then return end
     

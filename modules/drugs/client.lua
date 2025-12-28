@@ -78,6 +78,7 @@ RegisterNetEvent('territories:client:attemptDrugSale', function(data)
     
     local currentZone = exports[GetCurrentResourceName()]:getCurrentZone()
     if currentZone then
+        local pedNetId = NetworkGetNetworkIdFromEntity(entity)
         lib.callback('territories:sellDrugsToNPC', false, function(success, message)
             if success then
                 lib.notify({
@@ -110,7 +111,10 @@ RegisterNetEvent('territories:client:attemptDrugSale', function(data)
             
             SetPedAsNoLongerNeeded(entity)
             sellingDrugs = false
-        end, currentZone)
+        end, {
+            territoryId = currentZone,
+            pedNetId = pedNetId
+        })
     else
         sellingDrugs = false
     end

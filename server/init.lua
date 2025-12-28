@@ -1,6 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 Territories = Territories or {}
+local lastDeathReport = {}
 
 local function ensureZoneCenter(territory)
     if not territory then return end
@@ -98,11 +99,26 @@ RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServer
         return
     end
 
+    local now = os.time()
+    if lastDeathReport[src] and now - lastDeathReport[src] < 5 then
+        return
+    end
+    lastDeathReport[src] = now
+
     local victimZone = GetPlayerZone(src)
     if not victimZone then return end
 
     local killerPlayer = QBCore.Functions.GetPlayer(killerServerId)
     if not killerPlayer or killerServerId == src then return end
+
+    if GetPlayerZone(killerServerId) ~= victimZone then
+        return
+    end
+
+    local killerState = Player(killerServerId) and Player(killerServerId).state
+    if killerState and killerState.isDead then
+        return
+    end
 
     local victimGang = victimPlayer.PlayerData.gang.name
     local killerGang = killerPlayer.PlayerData.gang.name

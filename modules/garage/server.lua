@@ -87,8 +87,11 @@ RegisterNetEvent('territories:server:spawnVehicle', function(territoryId, vehicl
     })
     
     if not vehicle or not vehicle.stored then return end
-    
-    MySQL.update('UPDATE territory_vehicles SET stored = 0 WHERE id = ?', {vehicleId})
+
+    local updated = MySQL.update.await('UPDATE territory_vehicles SET stored = 0 WHERE id = ? AND territory_id = ? AND gang = ? AND stored = 1', {
+        vehicleId, territoryId, gang
+    })
+    if not updated or updated == 0 then return end
     
     TriggerClientEvent('territories:client:spawnVehicle', src, vehicle.vehicle, territory.features.garage.spawn)
 end)

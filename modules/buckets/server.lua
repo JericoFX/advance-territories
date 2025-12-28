@@ -62,4 +62,15 @@ function GetPlayersInBucket(bucketId)
     return players
 end
 
+function GetPlayerBucket(playerId)
+    return playerBuckets[playerId]
+end
+
+function GetGangLabBucket(gang, labType)
+    local bucketKey = ('%s_%s'):format(gang, labType)
+    return gangLabBuckets[bucketKey]
+end
+
 exports('GetPlayersInBucket', GetPlayersInBucket)
+exports('GetPlayerBucket', GetPlayerBucket)
+exports('GetGangLabBucket', GetGangLabBucket)
