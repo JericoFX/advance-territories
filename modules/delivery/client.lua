@@ -4,7 +4,7 @@ local deliveryVehicle = nil
 local deliveryBlip = nil
 local deliveryLocation = nil
 
-RegisterNetEvent('territories:client:startDelivery', function(vehicleModel, spawnCoords, destination, drugType, amount)
+RegisterNetEvent('territories:client:startDelivery', function(vehicleModel, spawnCoords, destination, drugType, amount, plate)
     if deliveryActive then return end
     
     deliveryActive = true
@@ -15,7 +15,11 @@ RegisterNetEvent('territories:client:startDelivery', function(vehicleModel, spaw
     deliveryVehicle = CreateVehicle(vehicleModel, spawnCoords.x, spawnCoords.y, spawnCoords.z, spawnCoords.w, true, true)
     
     -- Set vehicle properties
-    SetVehicleNumberPlateText(deliveryVehicle, 'DRUG' .. math.random(1000, 9999))
+    if plate then
+        SetVehicleNumberPlateText(deliveryVehicle, plate)
+    else
+        SetVehicleNumberPlateText(deliveryVehicle, 'DRUG' .. math.random(1000, 9999))
+    end
     SetEntityAsMissionEntity(deliveryVehicle, true, true)
     TaskWarpPedIntoVehicle(PlayerPedId(), deliveryVehicle, -1)
     

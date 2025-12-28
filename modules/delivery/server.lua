@@ -7,6 +7,10 @@ local DeliveryConfig = {
     completionRadius = 12.0, -- TODO: align with client UI radius
     policeAlertCooldownSeconds = 60 -- TODO: move to Config if needed
 }
+local DeliveryPlateConfig = {
+    prefix = 'DRUG', -- TODO: align with vehicle plate config
+    maxAttempts = 10
+}
 
 local deliveryLocations = {
     vec4(1200.0, -1276.0, 35.0, 90.0),
@@ -71,9 +75,18 @@ RegisterNetEvent('territories:server:startDelivery', function(territoryId, drugT
         destination = destination,
         vehicleModel = 'burrito3'
     }
+
+    local plate = nil
+    for i = 1, DeliveryPlateConfig.maxAttempts do
+        local candidate = ('%s%d'):format(DeliveryPlateConfig.prefix, math.random(1000, 9999))
+        if not plate then
+            plate = candidate
+        end
+    end
+    activeDeliveries[src].plate = plate
     
     -- Start delivery
-    TriggerClientEvent('territories:client:startDelivery', src, 'burrito3', territory.features.garage.spawn, destination, drugType, requiredAmount)
+    TriggerClientEvent('territories:client:startDelivery', src, 'burrito3', territory.features.garage.spawn, destination, drugType, requiredAmount, plate)
 end)
 
 RegisterNetEvent('territories:server:completeDelivery', function(drugType, amount)
@@ -127,6 +140,18 @@ RegisterNetEvent('territories:server:completeDelivery', function(drugType, amoun
             type = 'error'
         })
         return
+    end
+
+    if delivery.plate then
+        local currentPlate = GetVehicleNumberPlateText(vehicle)
+        if currentPlate ~= delivery.plate then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('wrong_vehicle'),
+                type = 'error'
+            })
+            return
+        end
     end
 
     drugType = delivery.drugType

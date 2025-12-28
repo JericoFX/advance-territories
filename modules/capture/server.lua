@@ -3,13 +3,15 @@ local sync = require 'modules.sync.server'
 local captureProgress = {}
 local playersInCaptureZones = {}
 local captureTimers = {}
+local lastCaptureDeath = {}
 
 -- Capture configuration
 local CaptureConfig = {
     tickInterval = 5000, -- 5 seconds per tick
     pointsPerTick = 5, -- 5% per tick
     penaltyPerDeath = 10, -- 10% penalty per death
-    requiredProgress = 100 -- 100% to capture
+    requiredProgress = 100, -- 100% to capture
+    deathCooldownSeconds = 5 -- TODO: align with design/balance requirements
 }
 
 local function isPlayerInCaptureZone(source, territoryId)
@@ -22,6 +24,26 @@ local function isPlayerInCaptureZone(source, territoryId)
     local coords = GetEntityCoords(ped)
     return Utils.isInRadius(coords, territory.capture.point, territory.capture.radius)
 end
+
+local function cleanupCaptureZonePlayers(territoryId)
+    if not playersInCaptureZones[territoryId] then return end
+
+    for playerId, gang in pairs(playersInCaptureZones[territoryId]) do
+        if GetPlayerZone(playerId) ~= territoryId or not isPlayerInCaptureZone(playerId, territoryId) then
+            playersInCaptureZones[territoryId][playerId] = nil
+        end
+    end
+end
+
+CreateThread(function()
+    while true do
+        Wait(CaptureConfig.tickInterval)
+        for territoryId, _ in pairs(playersInCaptureZones) do
+            cleanupCaptureZonePlayers(territoryId)
+            checkCaptureConditions(territoryId)
+        end
+    end
+end)
 
 -- Track players in capture zones
 lib.callback.register('territories:enterCaptureZone', function(source, territoryId)
@@ -40,6 +62,7 @@ lib.callback.register('territories:enterCaptureZone', function(source, territory
     end
     
     playersInCaptureZones[territoryId][source] = gang
+    cleanupCaptureZonePlayers(territoryId)
     checkCaptureConditions(territoryId)
     return true
 end)
@@ -48,6 +71,7 @@ lib.callback.register('territories:exitCaptureZone', function(source, territoryI
     if playersInCaptureZones[territoryId] then
         playersInCaptureZones[territoryId][source] = nil
     end
+    cleanupCaptureZonePlayers(territoryId)
     checkCaptureConditions(territoryId)
     return true
 end)
@@ -55,6 +79,8 @@ end)
 function checkCaptureConditions(territoryId)
     local territory = Territories[territoryId]
     if not territory then return end
+
+    cleanupCaptureZonePlayers(territoryId)
     
     -- Count gangs in zone
     local gangCounts = {}
@@ -122,9 +148,11 @@ end
 function updateCaptureProgress(territoryId)
     local capture = captureProgress[territoryId]
     if not capture then return end
-    
+
     local territory = Territories[territoryId]
     if not territory then return end
+
+    cleanupCaptureZonePlayers(territoryId)
     
     -- Check if gang still has members in zone
     local gangMembers = GetGangMembersInZone(territoryId, capture.gang)
@@ -247,6 +275,17 @@ RegisterNetEvent('territories:server:playerDeathInCapture', function(territoryId
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local playerState = Player(src) and Player(src).state
+    if not playerState or not playerState.isDead then
+        return
+    end
+
+    local now = os.time()
+    if lastCaptureDeath[src] and now - lastCaptureDeath[src] < CaptureConfig.deathCooldownSeconds then
+        return
+    end
+    lastCaptureDeath[src] = now
 
     if not isPlayerInCaptureZone(src, territoryId) then
         return

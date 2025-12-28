@@ -8,6 +8,11 @@ local DeliveryConfig = {
     },
     vehicleModels = {'burrito', 'speedo', 'rumpo'}
 }
+local MissionDeliveryConfig = {
+    minDurationSeconds = 30, -- TODO: align with client flow
+    completionRadius = 12.0 -- TODO: align with client interaction distance
+}
+local activeMissionDeliveries = {}
 
 local function startDrugDelivery(source, territoryId)
     local Player = QBCore.Functions.GetPlayer(source)
@@ -28,6 +33,13 @@ local function startDrugDelivery(source, territoryId)
     local buyer = DeliveryConfig.buyers[math.random(#DeliveryConfig.buyers)]
     local vehicleModel = DeliveryConfig.vehicleModels[math.random(#DeliveryConfig.vehicleModels)]
 
+    activeMissionDeliveries[source] = {
+        territoryId = territoryId,
+        buyer = buyer.coords,
+        vehicleModel = vehicleModel,
+        startTime = os.time()
+    }
+
     -- TODO: implement dedicated client handler for mission deliveries to avoid conflicting with bulk delivery flow.
     TriggerClientEvent('territories:client:startMissionDelivery', source, territoryId, buyer, vehicleModel)
 end
@@ -46,6 +58,25 @@ RegisterNetEvent('territories:server:completeMissionDelivery', function(territor
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
 
+    local active = activeMissionDeliveries[src]
+    if not active then return end
+    if active.territoryId ~= territoryId then return end
+
+    local elapsed = os.time() - active.startTime
+    if elapsed < MissionDeliveryConfig.minDurationSeconds then
+        return
+    end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+
+    if active.buyer then
+        local coords = GetEntityCoords(ped)
+        if #(coords - active.buyer) > MissionDeliveryConfig.completionRadius then
+            return
+        end
+    end
+
     local buyer = DeliveryConfig.buyers[math.random(#DeliveryConfig.buyers)]
     local reward = math.random(buyer.reward.min, buyer.reward.max)
 
@@ -63,5 +94,11 @@ RegisterNetEvent('territories:server:completeMissionDelivery', function(territor
             type = 'error'
         })
     end
+
+    activeMissionDeliveries[src] = nil
 end)
 
+AddEventHandler('playerDropped', function()
+    local src = source
+    activeMissionDeliveries[src] = nil
+end)

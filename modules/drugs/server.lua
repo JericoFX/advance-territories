@@ -1,7 +1,13 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local lastDrugReport = {}
+local lastNpcSale = {}
+local lastStreetSale = {}
 local DrugReportConfig = {
     cooldownSeconds = 30 -- TODO: move to Config if needed
+}
+local DrugSaleConfig = {
+    npcCooldownSeconds = 5, -- TODO: move to Config if needed
+    streetCooldownSeconds = 5 -- TODO: move to Config if needed
 }
 
 RegisterNetEvent('territories:server:startSelling', function(territoryId)
@@ -11,6 +17,15 @@ RegisterNetEvent('territories:server:startSelling', function(territoryId)
     
     local territory = GlobalState.territories[territoryId]
     if not territory or not territory.drugs then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
     
     local hasDrugs = false
     for _, drug in ipairs(territory.drugs) do
@@ -36,6 +51,16 @@ RegisterNetEvent('territories:server:sellDrugs', function()
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    if IsPedInAnyVehicle(ped, false) then return end
+
+    local now = os.time()
+    if lastStreetSale[src] and now - lastStreetSale[src] < DrugSaleConfig.streetCooldownSeconds then
+        return
+    end
+    lastStreetSale[src] = now
     
     local territoryId = GetPlayerZone(src)
     if not territoryId then return end
@@ -87,10 +112,17 @@ RegisterNetEvent('territories:server:sellDrugs', function()
     })
 end)
 
-lib.callback.register('territories:sellDrugsToNPC', function(source, territoryId)
+lib.callback.register('territories:sellDrugsToNPC', function(source, data)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return false, locale('error') end
+
+    local territoryId = data
+    local pedNetId = nil
+    if type(data) == 'table' then
+        territoryId = data.territoryId
+        pedNetId = data.pedNetId
+    end
     
     local territory = GlobalState.territories[territoryId]
     if not territory or not territory.drugs then
@@ -100,6 +132,31 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, territoryId
     local gang = Player.PlayerData.gang.name
     if gang == 'none' then
         return false, locale('no_gang')
+    end
+
+    if GetPlayerZone(src) ~= territoryId then
+        return false, locale('not_in_territory')
+    end
+
+    local now = os.time()
+    if lastNpcSale[src] and now - lastNpcSale[src] < DrugSaleConfig.npcCooldownSeconds then
+        return false, locale('already_selling')
+    end
+
+    if pedNetId then
+        local entity = NetworkGetEntityFromNetworkId(pedNetId)
+        if entity and DoesEntityExist(entity) then
+            local ped = GetPlayerPed(src)
+            if ped == 0 then return false, locale('error') end
+
+            local playerCoords = GetEntityCoords(ped)
+            local pedCoords = GetEntityCoords(entity)
+            if #(playerCoords - pedCoords) > Config.DrugSales.distance then
+                return false, locale('drug_sale_rejected')
+            end
+        else
+            return false, locale('drug_sale_rejected')
+        end
     end
     
     local priceMultiplier = 1.0
@@ -134,6 +191,7 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, territoryId
                         TriggerEvent('territories:server:addTerritoryMoney', territoryId, tax)
                     end
                     
+                    lastNpcSale[src] = now
                     return true, locale('drug_sale_success', amount, drug, finalPrice)
                 end
             end

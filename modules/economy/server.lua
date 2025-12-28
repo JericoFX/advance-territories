@@ -51,7 +51,20 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
         })
         return
     end
-    
+
+    local updated = MySQL.update.await('UPDATE territories SET treasury = 0, last_collected = NOW() WHERE zone_id = ? AND treasury = ?', {
+        territoryId, income
+    })
+
+    if not updated or updated == 0 then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('no_income'),
+            type = 'error'
+        })
+        return
+    end
+
     lastCollection[cooldownKey] = os.time()
     
     if Config.Economy.collection.distribution then
@@ -102,7 +115,6 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
     end
     
     territory.treasury = 0
-    MySQL.update('UPDATE territories SET treasury = 0, last_collected = NOW() WHERE zone_id = ?', {territoryId})
 end)
 
 AddEventHandler('territories:server:addTerritoryMoney', function(territoryId, amount)
