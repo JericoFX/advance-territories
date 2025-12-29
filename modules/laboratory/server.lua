@@ -70,8 +70,9 @@ RegisterNetEvent('territories:server:exitLaboratory', function(territoryId)
     
     SetPlayerRoutingBucket(src, 0)
     
-    if territoryBuckets[('%s_%s'):format(territoryId, bucketInfo.gangName)] then
-        territoryBuckets[('%s_%s'):format(territoryId, bucketInfo.gangName)].players[src] = nil
+    local bucketTerritoryId = bucketInfo.territoryId
+    if territoryBuckets[('%s_%s'):format(bucketTerritoryId, bucketInfo.gangName)] then
+        territoryBuckets[('%s_%s'):format(bucketTerritoryId, bucketInfo.gangName)].players[src] = nil
     end
     
     playerBuckets[src] = nil
