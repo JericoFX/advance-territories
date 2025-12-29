@@ -4,13 +4,30 @@ local gangLabBuckets = {}
 local nextBucketId = 1000
 
 -- Assign unique buckets per gang for labs
-RegisterNetEvent('territories:server:requestLabBucket', function(labType)
+RegisterNetEvent('territories:server:requestLabBucket', function(territoryId, labType)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
     
     local gang = Player.PlayerData.gang.name
     if not Utils.isValidGang(gang) then return end
+
+    local territory = Territories[territoryId]
+    if not territory or not territory.features or not territory.features.process then return end
+    if territory.features.process.type ~= labType then return end
+    if GetPlayerZone(src) ~= territoryId then return end
+
+    if not Utils.hasAccess(territory, gang) then return end
+
+    local processCoords = territory.features.process.coords
+    if processCoords then
+        local ped = GetPlayerPed(src)
+        if ped == 0 then return end
+        local coords = GetEntityCoords(ped)
+        if #(coords - processCoords) > Config.Interact.distance then
+            return
+        end
+    end
     
     local bucketKey = ('%s_%s'):format(gang, labType)
     

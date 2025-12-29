@@ -117,7 +117,7 @@ RegisterNetEvent('territories:client:startProcess', function(territoryId, recipe
             Wait(500)
             
             -- Request bucket assignment
-            TriggerServerEvent('territories:server:requestLabBucket', processType)
+            TriggerServerEvent('territories:server:requestLabBucket', territoryId, processType)
             Wait(100)
             
             SetEntityCoords(PlayerPedId(), labCoords.x, labCoords.y, labCoords.z, false, false, false, false)

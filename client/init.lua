@@ -22,7 +22,7 @@ AddStateBagChangeHandler('isDead', ('player:%s'):format(cache.serverId), functio
         local killerPed = GetPedSourceOfDeath(PlayerPedId())
         if killerPed and IsEntityAPed(killerPed) and IsPedAPlayer(killerPed) then
             local killerServerId = GetPlayerServerId(NetworkGetPlayerIndexFromPed(killerPed))
-            TriggerServerEvent('territories:server:playerDeath', currentZone, killerServerId)
+            TriggerServerEvent('territories:server:playerDeath', currentZone)
             
             -- Check if in capture zone for penalty
             local territory = Territories[currentZone]
