@@ -10,9 +10,11 @@ local DeliveryConfig = {
 }
 local MissionDeliveryConfig = {
     minDurationSeconds = 30, -- TODO: align with client flow
-    completionRadius = 12.0 -- TODO: align with client interaction distance
+    completionRadius = 12.0, -- TODO: align with client interaction distance
+    cooldownSeconds = 300 -- TODO: align with balance requirements
 }
 local activeMissionDeliveries = {}
+local lastMissionDelivery = {}
 
 local function startDrugDelivery(source, territoryId)
     local Player = QBCore.Functions.GetPlayer(source)
@@ -21,10 +23,39 @@ local function startDrugDelivery(source, territoryId)
     local territory = Territories[territoryId]
     if not territory then return end
 
+    if GetPlayerZone(source) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', source, {
+            title = 'Error',
+            description = 'You must be in the territory to start a delivery.',
+            type = 'error'
+        })
+        return
+    end
+
+    local gang = Player.PlayerData.gang.name
+    if not Utils.isValidGang(gang) or not Utils.hasAccess(territory, gang) then
+        TriggerClientEvent('ox_lib:notify', source, {
+            title = 'Error',
+            description = 'You do not have access to start a delivery here.',
+            type = 'error'
+        })
+        return
+    end
+
     if not hierarchy.hasPermission(Player, 'start_delivery') then
         TriggerClientEvent('ox_lib:notify', source, {
             title = 'Error',
             description = 'You do not have permission to start a delivery.',
+            type = 'error'
+        })
+        return
+    end
+
+    local now = os.time()
+    if lastMissionDelivery[source] and now - lastMissionDelivery[source] < MissionDeliveryConfig.cooldownSeconds then
+        TriggerClientEvent('ox_lib:notify', source, {
+            title = 'Error',
+            description = 'You need to wait before starting another delivery.',
             type = 'error'
         })
         return
@@ -37,8 +68,10 @@ local function startDrugDelivery(source, territoryId)
         territoryId = territoryId,
         buyer = buyer.coords,
         vehicleModel = vehicleModel,
-        startTime = os.time()
+        startTime = now
     }
+
+    lastMissionDelivery[source] = now
 
     -- TODO: implement dedicated client handler for mission deliveries to avoid conflicting with bulk delivery flow.
     TriggerClientEvent('territories:client:startMissionDelivery', source, territoryId, buyer, vehicleModel)
@@ -61,6 +94,11 @@ RegisterNetEvent('territories:server:completeMissionDelivery', function(territor
     local active = activeMissionDeliveries[src]
     if not active then return end
     if active.territoryId ~= territoryId then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        activeMissionDeliveries[src] = nil
+        return
+    end
 
     local elapsed = os.time() - active.startTime
     if elapsed < MissionDeliveryConfig.minDurationSeconds then

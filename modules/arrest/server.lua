@@ -1,15 +1,28 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local lastArrest = {}
 
 -- Configuration
 local ArrestConfig = {
     influencePenalty = 5, -- Lose 5% influence per arrest
-    reputationPenalty = 10 -- Territory reputation penalty
+    reputationPenalty = 10, -- Territory reputation penalty
+    cooldownSeconds = 10 -- Prevent spam
 }
 
 RegisterNetEvent('territories:server:playerArrested', function(territoryId)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
+
+    local playerState = Player(src) and Player(src).state
+    if not playerState or not playerState.ishandcuffed then
+        return
+    end
+
+    local now = os.time()
+    if lastArrest[src] and now - lastArrest[src] < ArrestConfig.cooldownSeconds then
+        return
+    end
+    lastArrest[src] = now
 
     local currentZone = GetPlayerZone(src)
     if not currentZone or currentZone ~= territoryId then
