@@ -10,8 +10,8 @@ local ArrestConfig = {
 
 RegisterNetEvent('territories:server:playerArrested', function(territoryId)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return end
+    local qbPlayer = QBCore.Functions.GetPlayer(src)
+    if not qbPlayer then return end
 
     local playerState = Player(src) and Player(src).state
     if not playerState or not playerState.ishandcuffed then
@@ -32,7 +32,7 @@ RegisterNetEvent('territories:server:playerArrested', function(territoryId)
     local territory = Territories[territoryId]
     if not territory then return end
     
-    local gang = Player.PlayerData.gang.name
+    local gang = qbPlayer.PlayerData.gang.name
     
     -- Only affect if arrested player's gang controls the territory
     if territory.control == gang then
@@ -48,7 +48,7 @@ RegisterNetEvent('territories:server:playerArrested', function(territoryId)
             if member.isOnline and member.source then
                 TriggerClientEvent('ox_lib:notify', member.source, {
                     title = locale('arrest_penalty'),
-                    description = locale('member_arrested_penalty', Player.PlayerData.charinfo.firstname, ArrestConfig.influencePenalty),
+                    description = locale('member_arrested_penalty', qbPlayer.PlayerData.charinfo.firstname, ArrestConfig.influencePenalty),
                     type = 'error',
                     duration = 8000
                 })
