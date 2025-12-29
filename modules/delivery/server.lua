@@ -36,8 +36,57 @@ RegisterNetEvent('territories:server:startDelivery', function(territoryId, drugT
         return
     end
 
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
+
+    local garageCoords = territory.features.garage.coords
+    if garageCoords then
+        local ped = GetPlayerPed(src)
+        if ped == 0 then return end
+        local coords = GetEntityCoords(ped)
+        if #(coords - garageCoords) > Config.Interact.distance then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
+
     local gang = Player.PlayerData.gang.name
     if not Utils.hasAccess(territory, gang) then return end
+
+    if not drugType or not territory.drugs then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('no_access'),
+            type = 'error'
+        })
+        return
+    end
+
+    local allowed = false
+    for _, drug in ipairs(territory.drugs) do
+        if drug == drugType then
+            allowed = true
+            break
+        end
+    end
+    if not allowed then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('no_access'),
+            type = 'error'
+        })
+        return
+    end
 
     if activeDeliveries[src] then
         TriggerClientEvent('ox_lib:notify', src, {
@@ -61,29 +110,46 @@ RegisterNetEvent('territories:server:startDelivery', function(territoryId, drugT
         return
     end
     
-    -- Remove drugs
-    exports.ox_inventory:RemoveItem(src, drugType, requiredAmount)
-    
     -- Get random delivery location
     local destination = deliveryLocations[math.random(#deliveryLocations)]
 
+    local plate = nil
+    for i = 1, DeliveryPlateConfig.maxAttempts do
+        local candidate = ('%s%d'):format(DeliveryPlateConfig.prefix, math.random(1000, 9999))
+        local inUse = false
+        for _, delivery in pairs(activeDeliveries) do
+            if delivery.plate == candidate then
+                inUse = true
+                break
+            end
+        end
+        if not inUse then
+            plate = candidate
+            break
+        end
+    end
+
+    if not plate then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('error'),
+            type = 'error'
+        })
+        return
+    end
+
+    -- Remove drugs
+    exports.ox_inventory:RemoveItem(src, drugType, requiredAmount)
+    
     activeDeliveries[src] = {
         territoryId = territoryId,
         drugType = drugType,
         amount = requiredAmount,
         startTime = os.time(),
         destination = destination,
-        vehicleModel = 'burrito3'
+        vehicleModel = 'burrito3',
+        plate = plate
     }
-
-    local plate = nil
-    for i = 1, DeliveryPlateConfig.maxAttempts do
-        local candidate = ('%s%d'):format(DeliveryPlateConfig.prefix, math.random(1000, 9999))
-        if not plate then
-            plate = candidate
-        end
-    end
-    activeDeliveries[src].plate = plate
     
     -- Start delivery
     TriggerClientEvent('territories:client:startDelivery', src, 'burrito3', territory.features.garage.spawn, destination, drugType, requiredAmount, plate)

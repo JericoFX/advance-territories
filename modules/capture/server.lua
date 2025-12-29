@@ -33,6 +33,10 @@ local function cleanupCaptureZonePlayers(territoryId)
             playersInCaptureZones[territoryId][playerId] = nil
         end
     end
+
+    if not next(playersInCaptureZones[territoryId]) then
+        playersInCaptureZones[territoryId] = nil
+    end
 end
 
 CreateThread(function()
@@ -70,6 +74,9 @@ end)
 lib.callback.register('territories:exitCaptureZone', function(source, territoryId)
     if playersInCaptureZones[territoryId] then
         playersInCaptureZones[territoryId][source] = nil
+        if not next(playersInCaptureZones[territoryId]) then
+            playersInCaptureZones[territoryId] = nil
+        end
     end
     cleanupCaptureZonePlayers(territoryId)
     checkCaptureConditions(territoryId)
@@ -311,6 +318,9 @@ AddEventHandler('playerDropped', function()
     for territoryId, players in pairs(playersInCaptureZones) do
         if players[src] then
             players[src] = nil
+            if not next(players) then
+                playersInCaptureZones[territoryId] = nil
+            end
             checkCaptureConditions(territoryId)
         end
     end

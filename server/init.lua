@@ -89,7 +89,7 @@ function loadTerritories()
     end
 end
 
-RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServerId)
+RegisterNetEvent('territories:server:playerDeath', function(zoneId)
     local src = source
     local victimPlayer = QBCore.Functions.GetPlayer(src)
     if not victimPlayer then return end
@@ -107,6 +107,15 @@ RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServer
 
     local victimZone = GetPlayerZone(src)
     if not victimZone then return end
+
+    local victimPed = GetPlayerPed(src)
+    if victimPed == 0 then return end
+
+    local killerPed = GetPedSourceOfDeath(victimPed)
+    if killerPed == 0 then return end
+
+    local killerServerId = NetworkGetEntityOwner(killerPed)
+    if not killerServerId or killerServerId == 0 or killerServerId == src then return end
 
     local killerPlayer = QBCore.Functions.GetPlayer(killerServerId)
     if not killerPlayer or killerServerId == src then return end
@@ -126,10 +135,6 @@ RegisterNetEvent('territories:server:playerDeath', function(zoneId, killerServer
     if not Utils.isValidGang(victimGang) or not Utils.isValidGang(killerGang) or victimGang == killerGang then
         return
     end
-
-    local victimPed = GetPlayerPed(src)
-    local killerPed = GetPlayerPed(killerServerId)
-    if victimPed == 0 or killerPed == 0 then return end
 
     local victimCoords = GetEntityCoords(victimPed)
     local killerCoords = GetEntityCoords(killerPed)

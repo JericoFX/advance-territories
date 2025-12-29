@@ -28,6 +28,15 @@ RegisterNetEvent('territories:server:enterLaboratory', function(territoryId, gan
     gangName = Player.PlayerData.gang.name
     if not Utils.isValidGang(gangName) then return end
     if not Utils.hasAccess(territory, gangName) then return end
+
+    if GetPlayerZone(src) ~= territoryId then return end
+
+    if not territory.features or not territory.features.labEntry or not territory.features.labEntry.coords then return end
+    local entryCoords = territory.features.labEntry.coords
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    if #(coords - entryCoords) > Config.Interact.distance then return end
     
     local bucketData = getOrCreateTerritoryBucket(territoryId, gangName)
     

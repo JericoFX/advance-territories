@@ -158,6 +158,8 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, data)
             return false, locale('drug_sale_rejected')
         end
     end
+
+    lastNpcSale[src] = now
     
     local priceMultiplier = 1.0
     if territory.control == gang then
@@ -191,7 +193,6 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, data)
                         TriggerEvent('territories:server:addTerritoryMoney', territoryId, tax)
                     end
                     
-                    lastNpcSale[src] = now
                     return true, locale('drug_sale_success', amount, drug, finalPrice)
                 end
             end

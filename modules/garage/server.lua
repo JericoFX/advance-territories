@@ -25,6 +25,30 @@ RegisterNetEvent('territories:server:storeVehicle', function(territoryId)
     
     local territory = Territories[territoryId]
     if not territory then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
+
+    local garageCoords = territory.features and territory.features.garage and territory.features.garage.coords or nil
+    if garageCoords then
+        local ped = GetPlayerPed(src)
+        if ped == 0 then return end
+        local coords = GetEntityCoords(ped)
+        if #(coords - garageCoords) > Config.Interact.distance then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
     
     local gang = Player.PlayerData.gang.name
     if not Utils.hasAccess(territory, gang) then return end
@@ -78,6 +102,30 @@ RegisterNetEvent('territories:server:spawnVehicle', function(territoryId, vehicl
     
     local territory = Territories[territoryId]
     if not territory or not territory.features.garage then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
+
+    local garageCoords = territory.features.garage.coords or nil
+    if garageCoords then
+        local ped = GetPlayerPed(src)
+        if ped == 0 then return end
+        local coords = GetEntityCoords(ped)
+        if #(coords - garageCoords) > Config.Interact.distance then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
     
     local gang = Player.PlayerData.gang.name
     if not Utils.hasAccess(territory, gang) then return end
