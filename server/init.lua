@@ -43,7 +43,7 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ]])
     
-    loadTerritories()
+
 end)
 
 function loadTerritories()
@@ -88,7 +88,7 @@ function loadTerritories()
         end
     end
 end
-
+    loadTerritories()
 RegisterNetEvent('territories:server:playerDeath', function(zoneId)
     local src = source
     local victimPlayer = QBCore.Functions.GetPlayer(src)
