@@ -1,5 +1,24 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+lib.addCommand('neutralize', {
+    help = locale('neutralize_help'),
+    restricted = false
+}, function(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+
+    if not Utils.isPoliceJob(Player.PlayerData.job.name) then
+        TriggerClientEvent('ox_lib:notify', source, {
+            title = locale('error'),
+            description = locale('not_police'),
+            type = 'error'
+        })
+        return
+    end
+
+    TriggerClientEvent('territories:client:neutralizeCommand', source)
+end)
+
 RegisterNetEvent('territories:server:neutralizeTerritory', function(territoryId)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)

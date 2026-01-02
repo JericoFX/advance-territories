@@ -21,10 +21,7 @@ local function createPointBlip(coords, index)
     return blip
 end
 
-lib.addCommand('createterritory', {
-    help = locale('create_territory_help'),
-    restricted = 'group.admin'
-}, function()
+RegisterNetEvent('territories:client:startTerritoryCreator', function()
     if creatingTerritory then
         lib.notify({
             title = locale('error'),

@@ -1,5 +1,12 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+lib.addCommand('createterritory', {
+    help = locale('create_territory_help'),
+    restricted = 'group.admin'
+}, function(source)
+    TriggerClientEvent('territories:client:startTerritoryCreator', source)
+end)
+
 local function isValidVector(data)
     return type(data) == 'table' and type(data.x) == 'number' and type(data.y) == 'number' and type(data.z) == 'number'
 end

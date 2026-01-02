@@ -1,10 +1,6 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
--- Police can neutralize territories
-lib.addCommand('neutralize', {
-    help = locale('neutralize_help'),
-    restricted = false
-}, function()
+local function startNeutralizeTerritory()
     local playerData = QBCore.Functions.GetPlayerData()
     
     if not Utils.isPoliceJob(playerData.job.name) then
@@ -61,6 +57,10 @@ lib.addCommand('neutralize', {
             type = 'error'
         })
     end
+end
+
+RegisterNetEvent('territories:client:neutralizeCommand', function()
+    startNeutralizeTerritory()
 end)
 
 RegisterNetEvent('territories:client:policeBlip', function(coords)
