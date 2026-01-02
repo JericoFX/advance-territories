@@ -4,19 +4,6 @@ local labCoordinates = {
     meth = vec3(997.0, -3200.0, -36.0)
 }
 
-local function loadDrugLabIPLs()
-    -- Biker DLC Interior IPLs
-    RequestIpl("bkr_biker_interior_placement_interior_0_biker_dlc_int_01_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_1_biker_dlc_int_02_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_2_biker_dlc_int_ware01_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_3_biker_dlc_int_ware02_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_4_biker_dlc_int_ware03_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_5_biker_dlc_int_ware04_milo")
-    RequestIpl("bkr_biker_interior_placement_interior_6_biker_dlc_int_ware05_milo")
-    
-    loadLabInteriors()
-end
-
 local function loadLabInteriors()
     -- Meth Lab
     local methCoords = {1009.5, -3196.6, -38.99682}
@@ -79,6 +66,19 @@ local function loadLabInteriors()
         EnableInteriorProp(cokeInteriorID, "coke_cut_03")
         RefreshInterior(cokeInteriorID)
     end
+end
+
+local function loadDrugLabIPLs()
+    -- Biker DLC Interior IPLs
+    RequestIpl("bkr_biker_interior_placement_interior_0_biker_dlc_int_01_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_1_biker_dlc_int_02_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_2_biker_dlc_int_ware01_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_3_biker_dlc_int_ware02_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_4_biker_dlc_int_ware03_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_5_biker_dlc_int_ware04_milo")
+    RequestIpl("bkr_biker_interior_placement_interior_6_biker_dlc_int_ware05_milo")
+    
+    loadLabInteriors()
 end
 
 CreateThread(function()
