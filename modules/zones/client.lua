@@ -207,3 +207,7 @@ end
 function IsInZone(id)
     return currentZone == id
 end
+
+exports('getCurrentZone', function()
+    return currentZone
+end)

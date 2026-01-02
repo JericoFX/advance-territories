@@ -38,6 +38,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'modules/hierarchy/init.lua',
     'modules/sync/server.lua',
     'modules/zones/server.lua',
     'modules/territories/server.lua',
@@ -48,6 +49,8 @@ server_scripts {
     'modules/stash/server.lua',
     'modules/process/server.lua',
     'modules/spy/server.lua',
+    'modules/missions/init.lua',
+    'modules/delivery/init.lua',
     'modules/delivery/server.lua',
     'modules/police/server.lua',
     'modules/buckets/server.lua',
