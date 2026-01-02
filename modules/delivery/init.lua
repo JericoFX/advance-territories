@@ -79,9 +79,16 @@ end
 
 lib.addCommand('startdelivery', {
     help = 'Start a drug delivery mission',
-    restricted = 'group.gang'
+    restricted = 'group.gang',
+    params = {
+        {
+            name = 'territory',
+            type = 'string',
+            help = 'Territory ID'
+        }
+    }
 }, function(source, args)
-    local territoryId = args[1]
+    local territoryId = args.territory
     if not territoryId then return end
     startDrugDelivery(source, territoryId)
 end)
