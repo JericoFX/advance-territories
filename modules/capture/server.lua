@@ -136,6 +136,9 @@ function startCapture(territoryId, gang)
     }
     
     sync.updateCaptureProgress(territoryId, gang, 0)
+
+    local duration = math.floor((CaptureConfig.requiredProgress / CaptureConfig.pointsPerTick) * CaptureConfig.tickInterval)
+    TriggerClientEvent('territories:client:startCapture', -1, territoryId, duration)
     
     -- Notify all
     TriggerClientEvent('territories:client:captureStarted', -1, territoryId, gang)

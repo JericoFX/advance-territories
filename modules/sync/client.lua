@@ -34,6 +34,7 @@ AddStateBagChangeHandler('captureProgress', 'global', function(bagName, key, val
                 description = locale('capture_progress_update', data.gang, territory.label, data.progress),
                 type = 'inform'
             })
+            TriggerEvent('territories:client:captureProgressUpdated', territoryId, data)
         end
     end
 end)
