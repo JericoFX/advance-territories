@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 
 lib.addCommand('neutralize', {
     help = locale('neutralize_help'),
@@ -52,6 +53,8 @@ RegisterNetEvent('territories:server:neutralizeTerritory', function(territoryId)
     local oldGang = territory.control
     territory.control = 'neutral'
     territory.influence = 0
+    sync.updateTerritoryControl(territoryId, 'neutral')
+    sync.updateTerritoryInfluence(territoryId, 0)
     
     -- Update all clients
     TriggerClientEvent('territories:client:updateControl', -1, territoryId, 'neutral')
