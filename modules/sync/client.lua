@@ -1,5 +1,6 @@
 local sync = {}
 local blips = {}
+local lastCaptureProgress = {}
 
 function sync.updateBlipColor(territoryId, gang)
     if blips[territoryId] then
@@ -24,7 +25,19 @@ AddStateBagChangeHandler('territories', 'global', function(bagName, key, value)
 end)
 
 AddStateBagChangeHandler('captureProgress', 'global', function(bagName, key, value)
-    if not value then return end
+    if not value then
+        for territoryId, _ in pairs(lastCaptureProgress) do
+            TriggerEvent('territories:client:captureProgressRemoved', territoryId)
+        end
+        lastCaptureProgress = {}
+        return
+    end
+
+    for territoryId, _ in pairs(lastCaptureProgress) do
+        if not value[territoryId] then
+            TriggerEvent('territories:client:captureProgressRemoved', territoryId)
+        end
+    end
     
     for territoryId, data in pairs(value) do
         if Territories[territoryId] then
@@ -37,6 +50,8 @@ AddStateBagChangeHandler('captureProgress', 'global', function(bagName, key, val
             TriggerEvent('territories:client:captureProgressUpdated', territoryId, data)
         end
     end
+
+    lastCaptureProgress = value
 end)
 
 lib.onCache('vehicle', function(value)

@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 
 lib.addCommand('territories', {
     help = 'Admin menu for territories',
@@ -40,6 +41,8 @@ RegisterNetEvent('territories:server:adminUpdate', function(zoneId, control, inf
     
     territory.control = control
     territory.influence = influence
+    sync.updateTerritoryControl(zoneId, control)
+    sync.updateTerritoryInfluence(zoneId, influence)
     
     -- Update all clients
     TriggerClientEvent('territories:client:updateControl', -1, zoneId, control)

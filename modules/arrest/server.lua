@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local sync = require 'modules.sync.server'
 local lastArrest = {}
 
 -- Configuration
@@ -38,6 +39,7 @@ RegisterNetEvent('territories:server:playerArrested', function(territoryId)
     if territory.control == gang then
         -- Reduce influence
         territory.influence = math.max(0, territory.influence - ArrestConfig.influencePenalty)
+        sync.updateTerritoryInfluence(territoryId, territory.influence)
         
         -- Update all clients
         TriggerClientEvent('territories:client:updateInfluence', -1, territoryId, territory.influence)
