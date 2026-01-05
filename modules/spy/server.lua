@@ -103,6 +103,7 @@ RegisterNetEvent('territories:server:catchSpy', function(territoryId)
     end
     
     local ped = GetPlayerPed(src)
+    if ped == 0 then return end
     local coords = GetEntityCoords(ped)
     
     if #(coords - spy.position) > 10.0 then return end

@@ -177,8 +177,11 @@ function GetPoliceInZone(zoneId)
     
     for _, playerId in ipairs(players) do
         local Player = QBCore.Functions.GetPlayer(playerId)
-        if Player and Utils.isPoliceJob(Player.PlayerData.job.name) then
-            count = count + 1
+        if Player and Player.PlayerData and Player.PlayerData.job then
+            local job = Player.PlayerData.job
+            if Utils.isPoliceJob(job.name) and (job.onduty == nil or job.onduty) then
+                count = count + 1
+            end
         end
     end
     

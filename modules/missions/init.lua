@@ -178,6 +178,15 @@ RegisterNetEvent('territories:server:startMission', function(territoryId, missio
     
     local territory = Territories[territoryId]
     if not territory or territory.control ~= gang then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
     
     if not hierarchy.hasPermission(Player, 'start_missions') then
         TriggerClientEvent('ox_lib:notify', src, {

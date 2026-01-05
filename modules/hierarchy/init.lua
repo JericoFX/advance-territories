@@ -21,8 +21,11 @@ local function hasPermission(player, action)
     
     local requiredGrade = permissions[action]
     if not requiredGrade then return true end
+
+    local grade = player.PlayerData.gang.grade
+    local level = type(grade) == 'table' and grade.level or grade or 0
     
-    return player.PlayerData.gang.grade.level >= requiredGrade
+    return level >= requiredGrade
 end
 
 lib.addCommand('gang.promote', {

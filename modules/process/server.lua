@@ -83,7 +83,16 @@ RegisterNetEvent('territories:server:startProcess', function(territoryId, recipe
     end
     
     local playerGang = Player.PlayerData.gang.name
-    if not Utils.hasAccess(territory, playerGang) then
+    if Config.Processing.requireControl then
+        if territory.control ~= playerGang then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    elseif not Utils.hasAccess(territory, playerGang) then
         TriggerClientEvent('ox_lib:notify', src, {
             title = locale('error'),
             description = locale('no_access'),
@@ -211,6 +220,29 @@ RegisterNetEvent('territories:server:completeProcess', function(territoryId, rec
     if Config.Economy.enabled and Config.Economy.tax.processing > 0 then
         local taxAmount = math.floor(100 * Config.Economy.tax.processing)
         TriggerEvent('territories:server:addTerritoryMoney', territoryId, taxAmount)
+    end
+
+    activeProcesses[src] = nil
+end)
+
+RegisterNetEvent('territories:server:cancelProcess', function(territoryId, recipeIndex)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+
+    local active = activeProcesses[src]
+    if not active then return end
+    if active.territoryId ~= territoryId or active.recipeIndex ~= recipeIndex then return end
+
+    local territory = Territories[territoryId]
+    if not territory or not territory.features.process then return end
+
+    local processType = active.processType or territory.features.process.type
+    local recipe = ProcessRecipes[processType] and ProcessRecipes[processType][recipeIndex]
+    if not recipe then return end
+
+    for item, amount in pairs(recipe.input) do
+        exports.ox_inventory:AddItem(src, item, amount)
     end
 
     activeProcesses[src] = nil

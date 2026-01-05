@@ -3,6 +3,11 @@ local deliveryActive = false
 local deliveryVehicle = nil
 local deliveryBlip = nil
 local deliveryLocation = nil
+local missionDeliveryActive = false
+local missionDeliveryVehicle = nil
+local missionDeliveryBlip = nil
+local missionDeliveryBuyer = nil
+local missionDeliveryTerritory = nil
 
 RegisterNetEvent('territories:client:startDelivery', function(vehicleModel, spawnCoords, destination, drugType, amount, plate)
     if deliveryActive then return end
@@ -154,3 +159,79 @@ function triggerPoliceRaid()
         end
     end)
 end
+
+RegisterNetEvent('territories:client:startMissionDelivery', function(territoryId, buyer, vehicleModel)
+    if missionDeliveryActive or deliveryActive then return end
+
+    missionDeliveryActive = true
+    missionDeliveryTerritory = territoryId
+    missionDeliveryBuyer = buyer and buyer.coords or buyer
+
+    lib.requestModel(vehicleModel)
+    local ped = PlayerPedId()
+    local spawnCoords = GetEntityCoords(ped)
+    missionDeliveryVehicle = CreateVehicle(vehicleModel, spawnCoords.x, spawnCoords.y, spawnCoords.z, 0.0, true, true)
+    SetEntityAsMissionEntity(missionDeliveryVehicle, true, true)
+    TaskWarpPedIntoVehicle(PlayerPedId(), missionDeliveryVehicle, -1)
+
+    missionDeliveryBlip = AddBlipForCoord(missionDeliveryBuyer.x, missionDeliveryBuyer.y, missionDeliveryBuyer.z)
+    SetBlipSprite(missionDeliveryBlip, 514)
+    SetBlipScale(missionDeliveryBlip, 1.0)
+    SetBlipColour(missionDeliveryBlip, 5)
+    SetBlipRoute(missionDeliveryBlip, true)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(locale('delivery_location'))
+    EndTextCommandSetBlipName(missionDeliveryBlip)
+
+    CreateThread(function()
+        while missionDeliveryActive do
+            Wait(1000)
+
+            local ped = PlayerPedId()
+            local coords = GetEntityCoords(ped)
+            local distance = #(coords - missionDeliveryBuyer)
+
+            if distance < 12.0 then
+                lib.showTextUI(locale('press_to_deliver'), {
+                    position = 'left-center',
+                    icon = 'truck'
+                })
+
+                if IsControlJustPressed(0, 38) then -- E
+                    if IsPedInVehicle(ped, missionDeliveryVehicle, false) then
+                        TriggerServerEvent('territories:server:completeMissionDelivery', missionDeliveryTerritory, true)
+                        missionDeliveryActive = false
+                    else
+                        lib.notify({
+                            title = locale('error'),
+                            description = locale('must_be_in_vehicle'),
+                            type = 'error'
+                        })
+                    end
+                end
+            else
+                lib.hideTextUI()
+            end
+
+            if not DoesEntityExist(missionDeliveryVehicle) or GetEntityHealth(missionDeliveryVehicle) <= 0 then
+                TriggerServerEvent('territories:server:completeMissionDelivery', missionDeliveryTerritory, false)
+                missionDeliveryActive = false
+            end
+        end
+
+        lib.hideTextUI()
+
+        if missionDeliveryBlip then
+            RemoveBlip(missionDeliveryBlip)
+            missionDeliveryBlip = nil
+        end
+
+        if missionDeliveryVehicle and DoesEntityExist(missionDeliveryVehicle) then
+            DeleteEntity(missionDeliveryVehicle)
+        end
+
+        missionDeliveryVehicle = nil
+        missionDeliveryBuyer = nil
+        missionDeliveryTerritory = nil
+    end)
+end)

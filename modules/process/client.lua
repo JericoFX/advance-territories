@@ -1,36 +1,35 @@
-local QBCore = exports['qb-core']:GetCoreObject()
 local isProcessing = false
-
+lib.locale()
 local ProcessRecipes = {
     weed = {
         {
             label = locale('process_weed'),
-            input = {['weed_leaf'] = 5},
-            output = {['weed_skunk'] = 1},
+            input = { ['weed_leaf'] = 5 },
+            output = { ['weed_skunk'] = 1 },
             time = 30000
         }
     },
     cocaine = {
         {
             label = locale('process_cocaine'),
-            input = {['coca_leaf'] = 10},
-            output = {['coke_brick'] = 1},
+            input = { ['coca_leaf'] = 10 },
+            output = { ['coke_brick'] = 1 },
             time = 60000
         }
     },
     meth = {
         {
             label = locale('cook_meth'),
-            input = {['chemicals'] = 3, ['empty_bag'] = 1},
-            output = {['meth'] = 1},
+            input = { ['chemicals'] = 3, ['empty_bag'] = 1 },
+            output = { ['meth'] = 1 },
             time = 75000
         }
     },
     crack = {
         {
             label = locale('cook_crack'),
-            input = {['coke_brick'] = 1, ['bakingsoda'] = 2},
-            output = {['crack'] = 3},
+            input = { ['coke_brick'] = 1, ['bakingsoda'] = 2 },
+            output = { ['crack'] = 3 },
             time = 45000
         }
     }
@@ -48,10 +47,10 @@ end
 RegisterNetEvent('territories:client:openProcess', function(territoryId)
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end
-    
+
     local processType = territory.features.process.type
     local recipes = ProcessRecipes[processType]
-    
+
     if not recipes then
         lib.notify({
             title = locale('error'),
@@ -60,7 +59,7 @@ RegisterNetEvent('territories:client:openProcess', function(territoryId)
         })
         return
     end
-    
+
     if isProcessing then
         lib.notify({
             title = locale('error'),
@@ -69,16 +68,16 @@ RegisterNetEvent('territories:client:openProcess', function(territoryId)
         })
         return
     end
-    
+
     local options = {}
     for i, recipe in ipairs(recipes) do
         local hasItems = hasRequiredItems(recipe.input)
         local metadata = {}
-        
+
         for item, amount in pairs(recipe.input) do
             table.insert(metadata, ('%s x%d'):format(item, amount))
         end
-        
+
         table.insert(options, {
             title = recipe.label,
             description = table.concat(metadata, ', '),
@@ -89,48 +88,48 @@ RegisterNetEvent('territories:client:openProcess', function(territoryId)
             end
         })
     end
-    
+
     lib.registerContext({
         id = 'process_menu',
         title = locale('process_menu'),
         options = options
     })
-    
+
     lib.showContext('process_menu')
 end)
 
 RegisterNetEvent('territories:client:startProcess', function(territoryId, recipeIndex)
     local territory = Territories[territoryId]
     if not territory or not territory.features.process then return end
-    
+
     local processType = territory.features.process.type
     local recipe = ProcessRecipes[processType][recipeIndex]
     if not recipe then return end
-    
+
     isProcessing = true
-    
+
     -- Teleport to lab if needed
     if processType ~= 'crack' then
         local labCoords = exports[GetCurrentResourceName()]:GetLabCoords(processType)
         if labCoords then
             DoScreenFadeOut(500)
             Wait(500)
-            
+
             -- Request bucket assignment
             TriggerServerEvent('territories:server:requestLabBucket', territoryId, processType)
             Wait(100)
-            
+
             SetEntityCoords(PlayerPedId(), labCoords.x, labCoords.y, labCoords.z, false, false, false, false)
             Wait(500)
             DoScreenFadeIn(500)
         end
     end
-    
+
     -- Start processing scene if enabled
     if Config.Processing.scenes and territory.features.process.scene then
         TriggerEvent('territories:client:startProcessingScene', territory.features.process, recipe.time)
     end
-    
+
     -- Progress bar
     local progress = lib.progressCircle({
         duration = recipe.time,
@@ -144,12 +143,13 @@ RegisterNetEvent('territories:client:startProcess', function(territoryId, recipe
             combat = true
         }
     })
-    
+
     isProcessing = false
-    
+
     if progress then
         TriggerServerEvent('territories:server:completeProcess', territoryId, recipeIndex)
     else
+        TriggerServerEvent('territories:server:cancelProcess', territoryId, recipeIndex)
         TriggerEvent('territories:client:stopProcessingScene')
         lib.notify({
             title = locale('cancelled'),
@@ -157,17 +157,18 @@ RegisterNetEvent('territories:client:startProcess', function(territoryId, recipe
             type = 'error'
         })
     end
-    
+
     -- Teleport back if in lab
     if processType ~= 'crack' then
         DoScreenFadeOut(500)
         Wait(500)
-        
+
         -- Exit bucket
         TriggerServerEvent('territories:server:exitLabBucket')
         Wait(100)
-        
-        SetEntityCoords(PlayerPedId(), territory.features.process.coords.x, territory.features.process.coords.y, territory.features.process.coords.z, false, false, false, false)
+
+        SetEntityCoords(PlayerPedId(), territory.features.process.coords.x, territory.features.process.coords.y,
+        territory.features.process.coords.z, false, false, false, false)
         Wait(500)
         DoScreenFadeIn(500)
     end

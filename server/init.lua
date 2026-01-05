@@ -2,11 +2,35 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 Territories = Territories or {}
 local lastDeathReport = {}
+local lastSyncRequest = {}
+local syncCooldownSeconds = 5
 
 local function ensureZoneCenter(territory)
     if not territory then return end
 
     territory.zone = territory.zone or {}
+
+    if territory.capture and territory.capture.point and type(territory.capture.point) == 'table' then
+        local p = territory.capture.point
+        if p.x and p.y and p.z and not (getmetatable(p) and getmetatable(p).__name == 'vector3') then
+            territory.capture.point = vec3(p.x, p.y, p.z)
+        end
+    end
+
+    if territory.zone.coords and type(territory.zone.coords) == 'table' then
+        local c = territory.zone.coords
+        if c.x and c.y and c.z and not (getmetatable(c) and getmetatable(c).__name == 'vector3') then
+            territory.zone.coords = vec3(c.x, c.y, c.z)
+        end
+    end
+
+    if territory.zone.points and type(territory.zone.points) == 'table' then
+        for i, point in ipairs(territory.zone.points) do
+            if type(point) == 'table' and point.x and point.y and point.z and not (getmetatable(point) and getmetatable(point).__name == 'vector3') then
+                territory.zone.points[i] = vec3(point.x, point.y, point.z)
+            end
+        end
+    end
 
     local center = Utils.getTerritoryCenter(territory)
     if center then
@@ -147,6 +171,11 @@ end)
 
 RegisterNetEvent('territories:server:syncTerritories', function()
     local src = source
+    local now = os.time()
+    if lastSyncRequest[src] and now - lastSyncRequest[src] < syncCooldownSeconds then
+        return
+    end
+    lastSyncRequest[src] = now
     if not Territories or not next(Territories) then return end
 
     for zoneId, territory in pairs(Territories) do

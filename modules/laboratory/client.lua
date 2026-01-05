@@ -61,45 +61,54 @@ function enterLaboratory(territoryId, drugType)
         return
     end
     
-    currentLab = {
-        territoryId = territoryId,
-        drugType = drugType,
-        exitCoords = GetEntityCoords(PlayerPedId())
-    }
-    
-    TriggerServerEvent('territories:server:enterLaboratory', territoryId, playerData.gang.name)
-    
-    lib.progressBar({
-        duration = 2000,
-        label = locale('entering_laboratory'),
-        useWhileDead = false,
-        canCancel = false,
-        disable = {
-            car = true,
-            move = true,
-            combat = true
-        },
-        anim = {
-            dict = 'anim@heists@keycard@',
-            clip = 'exit_door'
+    lib.callback('territories:enterLaboratory', false, function(success)
+        if not success then
+            lib.notify({
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+
+        currentLab = {
+            territoryId = territoryId,
+            drugType = drugType,
+            exitCoords = GetEntityCoords(PlayerPedId())
         }
-    })
-    
-    DoScreenFadeOut(500)
-    Wait(500)
-    
-    SetEntityCoords(PlayerPedId(), labCoords.x, labCoords.y, labCoords.z)
-    
-    Wait(1000)
-    DoScreenFadeIn(500)
-    
-    lib.notify({
-        title = locale('laboratory_entered'),
-        description = locale('laboratory_entered_desc', drugType),
-        type = 'success'
-    })
-    
-    createLabExitTarget()
+        
+        lib.progressBar({
+            duration = 2000,
+            label = locale('entering_laboratory'),
+            useWhileDead = false,
+            canCancel = false,
+            disable = {
+                car = true,
+                move = true,
+                combat = true
+            },
+            anim = {
+                dict = 'anim@heists@keycard@',
+                clip = 'exit_door'
+            }
+        })
+        
+        DoScreenFadeOut(500)
+        Wait(500)
+        
+        SetEntityCoords(PlayerPedId(), labCoords.x, labCoords.y, labCoords.z)
+        
+        Wait(1000)
+        DoScreenFadeIn(500)
+        
+        lib.notify({
+            title = locale('laboratory_entered'),
+            description = locale('laboratory_entered_desc', drugType),
+            type = 'success'
+        })
+        
+        createLabExitTarget()
+    end, territoryId)
 end
 
 function createLabExitTarget()

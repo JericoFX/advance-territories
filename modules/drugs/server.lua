@@ -123,6 +123,19 @@ lib.callback.register('territories:sellDrugsToNPC', function(source, data)
         territoryId = data.territoryId
         pedNetId = data.pedNetId
     end
+
+    if not pedNetId then
+        return false, locale('drug_sale_rejected')
+    end
+
+    local entity = NetworkGetEntityFromNetworkId(pedNetId)
+    if entity == 0 or not DoesEntityExist(entity) or not IsEntityAPed(entity) or IsPedAPlayer(entity) then
+        return false, locale('drug_sale_rejected')
+    end
+
+    if IsPedDeadOrDying(entity, true) or IsPedInAnyVehicle(entity, false) then
+        return false, locale('drug_sale_rejected')
+    end
     
     local territory = GlobalState.territories[territoryId]
     if not territory or not territory.drugs then
@@ -219,14 +232,17 @@ RegisterNetEvent('territories:server:reportDrugSale', function(coords)
     
     for _, playerId in ipairs(players) do
         local player = QBCore.Functions.GetPlayer(playerId)
-        if player and Utils.isPoliceJob(player.PlayerData.job.name) then
-            TriggerClientEvent('ox_lib:notify', playerId, {
-                title = locale('police_alert'),
-                description = locale('drug_sale_reported'),
-                type = 'error'
-            })
-            
-            TriggerClientEvent('territories:client:policeBlip', playerId, coords)
+        if player and player.PlayerData and player.PlayerData.job then
+            local job = player.PlayerData.job
+            if Utils.isPoliceJob(job.name) and (job.onduty == nil or job.onduty) then
+                TriggerClientEvent('ox_lib:notify', playerId, {
+                    title = locale('police_alert'),
+                    description = locale('drug_sale_reported'),
+                    type = 'error'
+                })
+                
+                TriggerClientEvent('territories:client:policeBlip', playerId, coords)
+            end
         end
     end
 end)

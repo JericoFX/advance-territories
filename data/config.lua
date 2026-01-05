@@ -1,6 +1,6 @@
 Config = {}
 
-Config.Debug = false
+Config.Debug = true
 
 Config.Interact = {
     distance = 2.0,
@@ -16,7 +16,7 @@ Config.Territory = {
         pointsPerPolice = 2,
         maxInfluence = 100,
         minInfluence = 0,
-        captureTime = 300000,
+        captureTime = 15,
         minMembers = 2,
         maxMembers = 8
     }
@@ -30,7 +30,7 @@ Config.Police = {
         'sasp',
         'fbi'
     },
-    minOnDuty = 2,
+    minOnDuty = 0,
     alertRadius = 150.0,
     alertChance = 25
 }
@@ -76,10 +76,10 @@ Config.DrugSales = {
         max = 10
     },
     prices = {
-        ['weed_skunk'] = {min = 50, max = 100},
-        ['coke_brick'] = {min = 150, max = 300},
-        ['meth'] = {min = 100, max = 200},
-        ['crack'] = {min = 80, max = 150}
+        ['weed_skunk'] = { min = 50, max = 100 },
+        ['coke_brick'] = { min = 150, max = 300 },
+        ['meth'] = { min = 100, max = 200 },
+        ['crack'] = { min = 80, max = 150 }
     }
 }
 

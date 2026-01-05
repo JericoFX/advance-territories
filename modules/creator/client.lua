@@ -68,8 +68,9 @@ function startPolyCreation(name)
             if IsControlJustPressed(0, 38) then -- E
                 local ped = PlayerPedId()
                 local coords = GetEntityCoords(ped)
-                local groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
-                local point = vec3(coords.x, coords.y, groundZ)
+                local found, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
+                local pointZ = found and groundZ or coords.z
+                local point = vec3(coords.x, coords.y, pointZ)
                 
                 table.insert(currentPoints, point)
                 table.insert(creatorBlips, createPointBlip(point, #currentPoints))

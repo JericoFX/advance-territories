@@ -15,6 +15,7 @@ shared_scripts {
 
 client_scripts {
     'modules/target/client.lua',
+    'modules/sync/client.lua',
     'modules/zones/client.lua',
     'modules/territories/client.lua',
     'modules/capture/client.lua',
@@ -27,10 +28,10 @@ client_scripts {
     'modules/scenes/client.lua',
     'modules/spy/client.lua',
     'modules/delivery/client.lua',
+    'modules/missions/client.lua',
     'modules/police/client.lua',
     'modules/arrest/client.lua',
     'modules/laboratory/client.lua',
-    'modules/ui/client.lua',
     'modules/admin/client.lua',
     'modules/creator/client.lua',
     'client/init.lua'

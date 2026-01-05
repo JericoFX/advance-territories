@@ -1,10 +1,9 @@
 local sync = require 'modules.sync.client'
-local capturePoints = {}
 local captureTimers = {}
 local activeCapture = nil
 local activeCaptureProgress = 0
 local activeCaptureTerritoryLabel = nil
-
+lib.locale()
 local function getProgressColor(progress)
     if progress >= 75 then
         return 46, 204, 113
@@ -52,41 +51,27 @@ CreateThread(function()
     end
 end)
 
-local function createCapturePoint(territoryId, territory)
-    if not territory.capture then return end
+RegisterNetEvent('territories:client:enteredZone', function(territoryId)
+    local territory = Territories[territoryId]
+    if not territory or not territory.capture then return end
 
-    local pointId = ('%s_capture'):format(territoryId)
-
-    if capturePoints[pointId] then
-        capturePoints[pointId]:remove()
-        capturePoints[pointId] = nil
-    end
-
-    capturePoints[pointId] = lib.points.new({
-        coords = territory.capture.point,
-        distance = territory.capture.radius,
-        onEnter = function()
-            lib.callback('territories:enterCaptureZone', false, function(success)
-                if success then
-                    TriggerEvent('territories:client:inCaptureZone', territoryId)
-                end
-            end, territoryId)
-        end,
-        onExit = function()
-            lib.callback('territories:exitCaptureZone', false, function(success)
-                if success then
-                    TriggerEvent('territories:client:leftCaptureZone', territoryId)
-                end
-            end, territoryId)
+    lib.callback('territories:enterCaptureZone', false, function(success)
+        if success then
+            TriggerEvent('territories:client:inCaptureZone', territoryId)
         end
-    })
-end
+    end, territoryId)
+end)
 
-local function createCapturePoints()
-    for territoryId, territory in pairs(Territories) do
-        createCapturePoint(territoryId, territory)
-    end
-end
+RegisterNetEvent('territories:client:exitedZone', function(territoryId)
+    local territory = Territories[territoryId]
+    if not territory or not territory.capture then return end
+
+    lib.callback('territories:exitCaptureZone', false, function(success)
+        if success then
+            TriggerEvent('territories:client:leftCaptureZone', territoryId)
+        end
+    end, territoryId)
+end)
 
 RegisterNetEvent('territories:client:startCapture', function(territoryId, duration)
     activeCapture = territoryId
@@ -94,16 +79,16 @@ RegisterNetEvent('territories:client:startCapture', function(territoryId, durati
     local remainingTime = duration
     activeCaptureProgress = 0
     activeCaptureTerritoryLabel = territory and territory.label or nil
-    
+
     lib.notify({
         title = locale('territory_capture'),
         description = locale('capture_started_time', territory.label, math.ceil(duration / 60000)),
         type = 'inform'
     })
-    
+
     CreateThread(function()
         while remainingTime > 0 and activeCapture == territoryId do
-            Wait(1000)  -- Wait 1 second
+            Wait(1000) -- Wait 1 second
             remainingTime = remainingTime - 1000
         end
 
@@ -123,7 +108,7 @@ end)
 
 RegisterNetEvent('territories:client:captureStarted', function(territoryId, gang)
     local territory = Territories[territoryId]
-    
+
     lib.notify({
         title = locale('territory_alert'),
         description = locale('capture_started', gang, territory.label),
@@ -135,7 +120,7 @@ end)
 RegisterNetEvent('territories:client:captureProgressUpdated', function(territoryId, data)
     local territory = Territories[territoryId]
     if not territory then return end
-    
+
     if not data then return end
 
     activeCapture = territoryId
@@ -145,7 +130,6 @@ end)
 
 RegisterNetEvent('territories:client:addTerritory', function(territoryId, territoryData)
     Territories[territoryId] = territoryData
-    createCapturePoint(territoryId, territoryData)
 end)
 
 RegisterNetEvent('territories:client:captureProgressRemoved', function(territoryId)
@@ -158,6 +142,5 @@ end)
 
 CreateThread(function()
     Wait(1000)
-    createCapturePoints()
     sync.requestCaptureState()
 end)

@@ -2,44 +2,47 @@ local Zones = {}
 local currentZone = nil
 local blips = {}
 local sync = require 'modules.sync.client'
-local uiShown = false
-local lastZoneInfo = nil
-
-local textUiOptions = {
-    position = 'top-center',
-    icon = 'shield-halved',
-    style = {
-        borderRadius = 0,
-        backgroundColor = '#141517',
-        color = 'white'
-    }
-}
-
-local function showTerritoryUI(territory)
-    if not territory then return end
-
-    local zoneInfo = locale('zone_info', territory.control, territory.influence)
-
-    if uiShown and zoneInfo == lastZoneInfo then
-        return
+local function getControlColor(control)
+    if control == 'ballas' then
+        return 160, 90, 220
+    elseif control == 'vagos' then
+        return 241, 196, 15
+    elseif control == 'families' then
+        return 46, 204, 113
+    elseif control == 'lostmc' then
+        return 230, 126, 34
+    elseif control == 'police' then
+        return 52, 152, 219
     end
-
-    if uiShown then
-        lib.hideTextUI()
-    else
-        uiShown = true
-    end
-
-    lastZoneInfo = zoneInfo
-    lib.showTextUI(zoneInfo, textUiOptions)
+    return 200, 200, 200
 end
 
-local function hideTerritoryUI()
-    if uiShown then
-        uiShown = false
-        lastZoneInfo = nil
-        lib.hideTextUI()
-    end
+local function drawTerritoryUI(territory)
+    if not territory then return end
+
+    local label = territory.label or locale('territory')
+    local info = locale('zone_info', territory.control, territory.influence)
+    local r, g, b = getControlColor(territory.control)
+
+    SetTextFont(4)
+    SetTextScale(0.45, 0.45)
+    SetTextOutline()
+    SetTextRightJustify(true)
+    SetTextWrap(0.0, 0.98)
+    SetTextColour(255, 255, 255, 220)
+    BeginTextCommandDisplayText('STRING')
+    AddTextComponentSubstringPlayerName(label)
+    EndTextCommandDisplayText(0.98, 0.93)
+
+    SetTextFont(4)
+    SetTextScale(0.42, 0.42)
+    SetTextOutline()
+    SetTextRightJustify(true)
+    SetTextWrap(0.0, 0.98)
+    SetTextColour(r, g, b, 220)
+    BeginTextCommandDisplayText('STRING')
+    AddTextComponentSubstringPlayerName(info)
+    EndTextCommandDisplayText(0.98, 0.955)
 end
 
 local function createZone(id, data)
@@ -56,44 +59,27 @@ local function createZone(id, data)
             thickness = territory.zone.thickness,
             debug = Config.Debug,
             onEnter = function()
-                currentZone = id
-                showTerritoryUI(territory)
-
-                -- Show entry notification
-                lib.notify({
-                    title = locale('territory'),
-                    description = locale('entered_territory', territory.label),
-                    type = 'inform',
-                    position = 'top',
-                    duration = 3000
-                })
-                
-                TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
                         currentZone = nil
-                        hideTerritoryUI()
+                        return
                     end
+                    currentZone = id
+                    drawTerritoryUI(territory)
+                    TriggerEvent('territories:client:enteredZone', id)
                 end, id)
             end,
             onExit = function()
-                currentZone = nil
-                hideTerritoryUI()
-
-                -- Show exit notification
-                lib.notify({
-                    title = locale('territory'),
-                    description = locale('left_territory', territory.label),
-                    type = 'inform'
-                })
-
-                TriggerEvent('territories:client:exitedZone', id)
-                lib.callback('territories:exitZone', false, function(success)
-                end, id)
+                if currentZone == id then
+                    TriggerEvent('territories:client:exitedZone', id)
+                    lib.callback('territories:exitZone', false, function(success)
+                    end, id)
+                    currentZone = nil
+                end
             end,
             inside = function()
                 if currentZone == id then
-                    showTerritoryUI(territory)
+                    drawTerritoryUI(territory)
                 end
             end
         })
@@ -104,44 +90,27 @@ local function createZone(id, data)
             rotation = territory.zone.rotation or 0,
             debug = Config.Debug,
             onEnter = function()
-                currentZone = id
-                showTerritoryUI(territory)
-                
-                -- Show entry notification
-                lib.notify({
-                    title = locale('territory'),
-                    description = locale('entered_territory', territory.label),
-                    type = 'inform',
-                    position = 'top',
-                    duration = 3000
-                })
-                
-                TriggerEvent('territories:client:enteredZone', id)
                 lib.callback('territories:enterZone', false, function(success)
                     if not success then
                         currentZone = nil
-                        hideTerritoryUI()
+                        return
                     end
+                    currentZone = id
+                    drawTerritoryUI(territory)
+                    TriggerEvent('territories:client:enteredZone', id)
                 end, id)
             end,
             onExit = function()
-                currentZone = nil
-                hideTerritoryUI()
-
-                -- Show exit notification
-                lib.notify({
-                    title = locale('territory'),
-                    description = locale('left_territory', territory.label),
-                    type = 'inform'
-                })
-
-                TriggerEvent('territories:client:exitedZone', id)
-                lib.callback('territories:exitZone', false, function(success)
-                end, id)
+                if currentZone == id then
+                    TriggerEvent('territories:client:exitedZone', id)
+                    lib.callback('territories:exitZone', false, function(success)
+                    end, id)
+                    currentZone = nil
+                end
             end,
             inside = function()
                 if currentZone == id then
-                    showTerritoryUI(territory)
+                    drawTerritoryUI(territory)
                 end
             end
         })
@@ -183,6 +152,17 @@ CreateThread(function()
     end
     sync.setBlips(blips)
     sync.requestTerritoriesState()
+end)
+
+CreateThread(function()
+    while true do
+        if currentZone and Territories[currentZone] then
+            drawTerritoryUI(Territories[currentZone])
+            Wait(0)
+        else
+            Wait(500)
+        end
+    end
 end)
 
 RegisterNetEvent('territories:client:addTerritory', function(territoryId, territoryData)

@@ -10,8 +10,13 @@ Utils = {}
 ---@param job string
 ---@return boolean
 function Utils.isPoliceJob(job)
+    if type(job) ~= 'string' then
+        return false
+    end
+
+    local jobLower = job:lower()
     for _, policeJob in ipairs(Config.Police.jobs) do
-        if job == policeJob then
+        if jobLower == tostring(policeJob):lower() then
             return true
         end
     end
@@ -39,6 +44,12 @@ end
 ---@param radius number
 ---@return boolean
 function Utils.isInRadius(coords, point, radius)
+    if type(coords) == 'table' and (coords.x or coords.y or coords.z) then
+        coords = vec3(coords.x or 0.0, coords.y or 0.0, coords.z or 0.0)
+    end
+    if type(point) == 'table' and (point.x or point.y or point.z) then
+        point = vec3(point.x or 0.0, point.y or 0.0, point.z or 0.0)
+    end
     return #(coords - point) <= radius
 end
 
@@ -103,8 +114,11 @@ function Utils.getPoliceCount()
 
     for _, playerId in ipairs(players) do
         local Player = QBCore.Functions.GetPlayer(playerId)
-        if Player and Utils.isPoliceJob(Player.PlayerData.job.name) then
-            count = count + 1
+        if Player and Player.PlayerData and Player.PlayerData.job then
+            local job = Player.PlayerData.job
+            if Utils.isPoliceJob(job.name) and (job.onduty == nil or job.onduty) then
+                count = count + 1
+            end
         end
     end
 

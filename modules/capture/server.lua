@@ -14,23 +14,48 @@ local CaptureConfig = {
     deathCooldownSeconds = 5 -- TODO: align with design/balance requirements
 }
 
+local function getTickInterval()
+    if Config.Debug then
+        return 1000
+    end
+    return CaptureConfig.tickInterval
+end
+
+local function getPointsPerTick()
+    if Config.Debug then
+        return 25
+    end
+    return CaptureConfig.pointsPerTick
+end
+
+local function getRequiredProgress()
+    return CaptureConfig.requiredProgress
+end
+
 local function isPlayerInCaptureZone(source, territoryId)
     local territory = Territories[territoryId]
     if not territory or not territory.capture then return false end
-
-    local ped = GetPlayerPed(source)
-    if ped == 0 then return false end
-
-    local coords = GetEntityCoords(ped)
-    return Utils.isInRadius(coords, territory.capture.point, territory.capture.radius)
+    return GetPlayerZone(source) == territoryId
 end
 
 local function cleanupCaptureZonePlayers(territoryId)
     if not playersInCaptureZones[territoryId] then return end
 
     for playerId, gang in pairs(playersInCaptureZones[territoryId]) do
-        if GetPlayerZone(playerId) ~= territoryId or not isPlayerInCaptureZone(playerId, territoryId) then
+        local playerZone = GetPlayerZone(playerId)
+        if (playerZone and playerZone ~= territoryId) or not isPlayerInCaptureZone(playerId, territoryId) then
             playersInCaptureZones[territoryId][playerId] = nil
+        else
+            local Player = QBCore.Functions.GetPlayer(playerId)
+            if not Player then
+                playersInCaptureZones[territoryId][playerId] = nil
+            else
+                local currentGang = Player.PlayerData.gang.name
+                if not Utils.isValidGang(currentGang) and Config.Debug then
+                    currentGang = 'neutral'
+                end
+                playersInCaptureZones[territoryId][playerId] = currentGang
+            end
         end
     end
 
@@ -41,7 +66,7 @@ end
 
 CreateThread(function()
     while true do
-        Wait(CaptureConfig.tickInterval)
+        Wait(getTickInterval())
         for territoryId, _ in pairs(playersInCaptureZones) do
             cleanupCaptureZonePlayers(territoryId)
             checkCaptureConditions(territoryId)
@@ -53,13 +78,25 @@ end)
 lib.callback.register('territories:enterCaptureZone', function(source, territoryId)
     local Player = QBCore.Functions.GetPlayer(source)
     if not Player then return false end
+    if Config.Debug then
+        print(('[CAPTURE] enterCaptureZone src=%s territory=%s'):format(source, tostring(territoryId)))
+    end
 
     if not isPlayerInCaptureZone(source, territoryId) then
+        if Config.Debug then
+            print(('[CAPTURE] enterCaptureZone rejected (not in zone) src=%s territory=%s'):format(source, tostring(territoryId)))
+        end
         return false
     end
-    
+
     local gang = Player.PlayerData.gang.name
-    if not Utils.isValidGang(gang) then return false end
+    if not Utils.isValidGang(gang) then
+        if Config.Debug then
+            gang = 'neutral'
+        else
+            return false
+        end
+    end
     
     if not playersInCaptureZones[territoryId] then
         playersInCaptureZones[territoryId] = {}
@@ -68,10 +105,16 @@ lib.callback.register('territories:enterCaptureZone', function(source, territory
     playersInCaptureZones[territoryId][source] = gang
     cleanupCaptureZonePlayers(territoryId)
     checkCaptureConditions(territoryId)
+    if Config.Debug then
+        print(('[CAPTURE] enterCaptureZone ok src=%s territory=%s gang=%s'):format(source, tostring(territoryId), tostring(gang)))
+    end
     return true
 end)
 
 lib.callback.register('territories:exitCaptureZone', function(source, territoryId)
+    if Config.Debug then
+        print(('[CAPTURE] exitCaptureZone src=%s territory=%s'):format(source, tostring(territoryId)))
+    end
     if playersInCaptureZones[territoryId] then
         playersInCaptureZones[territoryId][source] = nil
         if not next(playersInCaptureZones[territoryId]) then
@@ -93,7 +136,7 @@ function checkCaptureConditions(territoryId)
     local gangCounts = {}
     if playersInCaptureZones[territoryId] then
         for playerId, gang in pairs(playersInCaptureZones[territoryId]) do
-            if Utils.isValidGang(gang) then
+            if Utils.isValidGang(gang) or Config.Debug then
                 gangCounts[gang] = (gangCounts[gang] or 0) + 1
             end
         end
@@ -103,13 +146,23 @@ function checkCaptureConditions(territoryId)
     local dominantGang = nil
     local maxCount = 0
     
+    local minMembers = Config.Territory.control.minMembers
+    if Config.Debug and minMembers > 1 then
+        minMembers = 1
+    end
+
     for gang, count in pairs(gangCounts) do
-        if count >= Config.Territory.control.minMembers and count > maxCount then
+        if count >= minMembers and count > maxCount then
             dominantGang = gang
             maxCount = count
         end
     end
-    
+    if Config.Debug then
+        print(('[CAPTURE] checkCaptureConditions territory=%s dominant=%s maxCount=%s minMembers=%s control=%s'):format(
+            tostring(territoryId), tostring(dominantGang), tostring(maxCount), tostring(minMembers), tostring(territory.control)
+        ))
+    end
+
     -- Start or update capture
     if dominantGang and dominantGang ~= territory.control then
         if not captureProgress[territoryId] or captureProgress[territoryId].gang ~= dominantGang then
@@ -124,10 +177,28 @@ end
 function startCapture(territoryId, gang)
     local territory = Territories[territoryId]
     if not territory then return end
-    
-    -- Check police
-    local policeCount = Utils.getPoliceCount()
-    if policeCount < Config.Police.minOnDuty then return end
+    if Config.Debug then
+        print(('[CAPTURE] startCapture territory=%s gang=%s'):format(tostring(territoryId), tostring(gang)))
+    end
+
+    -- Check police (skip in debug mode)
+    if not Config.Debug then
+        local policeCount = Utils.getPoliceCount()
+        if policeCount < Config.Police.minOnDuty then
+            if playersInCaptureZones[territoryId] then
+                for playerId, playerGang in pairs(playersInCaptureZones[territoryId]) do
+                    if playerGang == gang then
+                        TriggerClientEvent('ox_lib:notify', playerId, {
+                            title = locale('error'),
+                            description = locale('need_more_police'),
+                            type = 'error'
+                        })
+                    end
+                end
+            end
+            return
+        end
+    end
     
     captureProgress[territoryId] = {
         gang = gang,
@@ -137,7 +208,7 @@ function startCapture(territoryId, gang)
     
     sync.updateCaptureProgress(territoryId, gang, 0)
 
-    local duration = math.floor((CaptureConfig.requiredProgress / CaptureConfig.pointsPerTick) * CaptureConfig.tickInterval)
+    local duration = math.floor((getRequiredProgress() / getPointsPerTick()) * getTickInterval())
     TriggerClientEvent('territories:client:startCapture', -1, territoryId, duration)
     
     -- Notify all
@@ -149,7 +220,7 @@ function startCapture(territoryId, gang)
     -- Start capture timer
     captureTimers[territoryId] = CreateThread(function()
         while captureProgress[territoryId] do
-            Wait(CaptureConfig.tickInterval)
+            Wait(getTickInterval())
             updateCaptureProgress(territoryId)
         end
     end)
@@ -165,20 +236,35 @@ function updateCaptureProgress(territoryId)
     cleanupCaptureZonePlayers(territoryId)
     
     -- Check if gang still has members in zone
+    local minMembers = Config.Territory.control.minMembers
+    if Config.Debug and minMembers > 1 then
+        minMembers = 1
+    end
+
     local gangMembers = GetGangMembersInZone(territoryId, capture.gang)
-    if gangMembers < Config.Territory.control.minMembers then
+    if gangMembers < minMembers then
+        if Config.Debug then
+            print(('[CAPTURE] updateCaptureProgress stop (members=%s min=%s) territory=%s gang=%s'):format(
+                tostring(gangMembers), tostring(minMembers), tostring(territoryId), tostring(capture.gang)
+            ))
+        end
         stopCapture(territoryId)
         return
     end
-    
+
     -- Update progress
-    capture.progress = capture.progress + CaptureConfig.pointsPerTick
+    capture.progress = capture.progress + getPointsPerTick()
+    if Config.Debug then
+        print(('[CAPTURE] progress territory=%s gang=%s progress=%s'):format(
+            tostring(territoryId), tostring(capture.gang), tostring(capture.progress)
+        ))
+    end
     
     -- Update GlobalState
     sync.updateCaptureProgress(territoryId, capture.gang, capture.progress)
     
     -- Check if complete
-    if capture.progress >= CaptureConfig.requiredProgress then
+    if capture.progress >= getRequiredProgress() then
         completeCapture(territoryId)
     end
 end
@@ -191,7 +277,11 @@ function completeCapture(territoryId)
     if not territory then return end
     
     local oldGang = territory.control
-    territory.control = capture.gang
+    local newGang = capture.gang
+    if Config.Debug and not Utils.isValidGang(newGang) then
+        newGang = 'neutral'
+    end
+    territory.control = newGang
     territory.influence = Config.Territory.control.maxInfluence
     
     -- Clean up
@@ -231,6 +321,9 @@ function completeCapture(territoryId)
 end
 
 function stopCapture(territoryId)
+    if Config.Debug then
+        print(('[CAPTURE] stopCapture territory=%s'):format(tostring(territoryId)))
+    end
     captureProgress[territoryId] = nil
     if captureTimers[territoryId] then
         captureTimers[territoryId] = nil
@@ -251,13 +344,16 @@ function alertPolice(territoryId)
     
     for _, playerId in ipairs(players) do
         local player = QBCore.Functions.GetPlayer(playerId)
-        if player and Utils.isPoliceJob(player.PlayerData.job.name) then
+        if player and player.PlayerData and player.PlayerData.job then
+            local job = player.PlayerData.job
+            if Utils.isPoliceJob(job.name) and (job.onduty == nil or job.onduty) then
             TriggerClientEvent('ox_lib:notify', playerId, {
                 title = locale('police_alert'),
                 description = locale('territory_under_attack', territory.label),
                 type = 'error',
                 duration = 10000
             })
+            end
         end
     end
 end

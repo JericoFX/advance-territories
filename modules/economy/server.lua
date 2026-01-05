@@ -51,21 +51,6 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
         })
         return
     end
-
-    local updated = MySQL.update.await('UPDATE territories SET treasury = 0, last_collected = NOW() WHERE zone_id = ? AND treasury = ?', {
-        territoryId, income
-    })
-
-    if not updated or updated == 0 then
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = locale('error'),
-            description = locale('no_income'),
-            type = 'error'
-        })
-        return
-    end
-
-    lastCollection[cooldownKey] = os.time()
     
     if Config.Economy.collection.distribution then
         local gangMembers = GetGangMembers(gang)
@@ -85,6 +70,21 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
         end
 
         if totalShares > 0 then
+            local updated = MySQL.update.await('UPDATE territories SET treasury = 0, last_collected = NOW() WHERE zone_id = ? AND treasury = ?', {
+                territoryId, income
+            })
+
+            if not updated or updated == 0 then
+                TriggerClientEvent('ox_lib:notify', src, {
+                    title = locale('error'),
+                    description = locale('no_income'),
+                    type = 'error'
+                })
+                return
+            end
+
+            lastCollection[cooldownKey] = os.time()
+
             for _, memberData in ipairs(onlineMembers) do
                 local memberShare = math.floor(income * (memberData.shares / totalShares))
                 local memberPlayer = QBCore.Functions.GetPlayer(memberData.source)
@@ -106,6 +106,21 @@ RegisterNetEvent('territories:server:collectIncome', function(territoryId)
             return
         end
     else
+        local updated = MySQL.update.await('UPDATE territories SET treasury = 0, last_collected = NOW() WHERE zone_id = ? AND treasury = ?', {
+            territoryId, income
+        })
+
+        if not updated or updated == 0 then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_income'),
+                type = 'error'
+            })
+            return
+        end
+
+        lastCollection[cooldownKey] = os.time()
+
         Player.Functions.AddMoney('cash', income)
         TriggerClientEvent('ox_lib:notify', src, {
             title = locale('territory_income'),

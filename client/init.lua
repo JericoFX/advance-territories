@@ -1,5 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
-
+lib.locale()
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     lib.locale()
     TriggerServerEvent('territories:server:syncTerritories')
@@ -23,7 +23,7 @@ AddStateBagChangeHandler('isDead', ('player:%s'):format(cache.serverId), functio
         if killerPed and IsEntityAPed(killerPed) and IsPedAPlayer(killerPed) then
             local killerServerId = GetPlayerServerId(NetworkGetPlayerIndexFromPed(killerPed))
             TriggerServerEvent('territories:server:playerDeath', currentZone)
-            
+
             -- Check if in capture zone for penalty
             local territory = Territories[currentZone]
             if territory and territory.capture then

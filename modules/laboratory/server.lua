@@ -17,26 +17,25 @@ local function getOrCreateTerritoryBucket(territoryId, gangName)
     return territoryBuckets[key]
 end
 
-RegisterNetEvent('territories:server:enterLaboratory', function(territoryId, gangName)
-    local src = source
+local function tryEnterLaboratory(src, territoryId)
     local Player = QBCore.Functions.GetPlayer(src)
-    if not Player then return end
+    if not Player then return false end
 
     local territory = Territories[territoryId]
-    if not territory then return end
+    if not territory then return false end
 
-    gangName = Player.PlayerData.gang.name
-    if not Utils.isValidGang(gangName) then return end
-    if not Utils.hasAccess(territory, gangName) then return end
+    local gangName = Player.PlayerData.gang.name
+    if not Utils.isValidGang(gangName) then return false end
+    if not Utils.hasAccess(territory, gangName) then return false end
 
-    if GetPlayerZone(src) ~= territoryId then return end
+    if GetPlayerZone(src) ~= territoryId then return false end
 
-    if not territory.features or not territory.features.labEntry or not territory.features.labEntry.coords then return end
+    if not territory.features or not territory.features.labEntry or not territory.features.labEntry.coords then return false end
     local entryCoords = territory.features.labEntry.coords
     local ped = GetPlayerPed(src)
-    if ped == 0 then return end
+    if ped == 0 then return false end
     local coords = GetEntityCoords(ped)
-    if #(coords - entryCoords) > Config.Interact.distance then return end
+    if #(coords - entryCoords) > Config.Interact.distance then return false end
     
     local bucketData = getOrCreateTerritoryBucket(territoryId, gangName)
     
@@ -58,6 +57,17 @@ RegisterNetEvent('territories:server:enterLaboratory', function(territoryId, gan
         description = locale('laboratory_bucket_desc', gangName),
         type = 'info'
     })
+
+    return true
+end
+
+RegisterNetEvent('territories:server:enterLaboratory', function(territoryId)
+    local src = source
+    tryEnterLaboratory(src, territoryId)
+end)
+
+lib.callback.register('territories:enterLaboratory', function(source, territoryId)
+    return tryEnterLaboratory(source, territoryId)
 end)
 
 RegisterNetEvent('territories:server:exitLaboratory', function(territoryId)

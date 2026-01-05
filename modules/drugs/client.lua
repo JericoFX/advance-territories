@@ -58,7 +58,7 @@ RegisterNetEvent('territories:client:attemptDrugSale', function(data)
     TaskTurnPedToFaceEntity(entity, ped, 1000)
     Wait(1500)
     
-    lib.progressBar({
+    local progress = lib.progressBar({
         duration = math.random(5000, 8000),
         label = locale('negotiating'),
         useWhileDead = false,
@@ -75,6 +75,15 @@ RegisterNetEvent('territories:client:attemptDrugSale', function(data)
     })
     
     FreezeEntityPosition(ped, false)
+    if not progress then
+        sellingDrugs = false
+        lib.notify({
+            title = locale('cancelled'),
+            description = locale('cancelled'),
+            type = 'error'
+        })
+        return
+    end
     
     local currentZone = exports[GetCurrentResourceName()]:getCurrentZone()
     if currentZone then

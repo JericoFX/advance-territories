@@ -139,7 +139,15 @@ RegisterNetEvent('territories:server:startDelivery', function(territoryId, drugT
     end
 
     -- Remove drugs
-    exports.ox_inventory:RemoveItem(src, drugType, requiredAmount)
+    local removed = exports.ox_inventory:RemoveItem(src, drugType, requiredAmount)
+    if not removed then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('no_access'),
+            type = 'error'
+        })
+        return
+    end
     
     activeDeliveries[src] = {
         territoryId = territoryId,
@@ -293,16 +301,18 @@ RegisterNetEvent('territories:server:alertPoliceRaid', function(coords)
     
     for _, playerId in ipairs(players) do
         local player = QBCore.Functions.GetPlayer(playerId)
-        if player and Utils.isPoliceJob(player.PlayerData.job.name) then
-            TriggerClientEvent('ox_lib:notify', playerId, {
-                title = locale('police_alert'),
-                description = locale('drug_transport_spotted'),
-                type = 'error',
-                duration = 15000
-            })
-            
-            -- Create raid blip
-            TriggerClientEvent('territories:client:createRaidBlip', playerId, coords)
+        if player and player.PlayerData and player.PlayerData.job then
+            local job = player.PlayerData.job
+            if Utils.isPoliceJob(job.name) and (job.onduty == nil or job.onduty) then
+                TriggerClientEvent('ox_lib:notify', playerId, {
+                    title = locale('police_alert'),
+                    description = locale('drug_transport_spotted'),
+                    type = 'error',
+                    duration = 15000
+                })
+                
+                TriggerClientEvent('territories:client:policeBlip', playerId, coords)
+            end
         end
     end
 end)

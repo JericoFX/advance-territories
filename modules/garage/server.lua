@@ -7,9 +7,44 @@ RegisterNetEvent('territories:server:getGarageVehicles', function(territoryId)
     
     local territory = Territories[territoryId]
     if not territory then return end
+
+    if GetPlayerZone(src) ~= territoryId then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = locale('error'),
+            description = locale('must_be_in_territory'),
+            type = 'error'
+        })
+        return
+    end
+
+    local garageCoords = territory.features and territory.features.garage and territory.features.garage.coords or nil
+    if garageCoords then
+        local ped = GetPlayerPed(src)
+        if ped == 0 then return end
+        local coords = GetEntityCoords(ped)
+        if #(coords - garageCoords) > Config.Interact.distance then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
     
     local gang = Player.PlayerData.gang.name
-    if not Utils.hasAccess(territory, gang) then return end
+    if Config.Garage.requireControl then
+        if territory.control ~= gang then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    else
+        if not Utils.hasAccess(territory, gang) then return end
+    end
     
     local vehicles = MySQL.query.await('SELECT * FROM territory_vehicles WHERE territory_id = ? AND gang = ?', {
         territoryId, gang
@@ -51,10 +86,41 @@ RegisterNetEvent('territories:server:storeVehicle', function(territoryId)
     end
     
     local gang = Player.PlayerData.gang.name
-    if not Utils.hasAccess(territory, gang) then return end
+    if Config.Garage.requireControl then
+        if territory.control ~= gang then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    else
+        if not Utils.hasAccess(territory, gang) then return end
+    end
     
     local vehicle = GetVehiclePedIsIn(GetPlayerPed(src), false)
     if vehicle == 0 then return end
+
+    local allowedTypes = Config.Garage.allowedTypes or {}
+    if #allowedTypes > 0 then
+        local vehicleType = GetVehicleType(vehicle)
+        local allowed = false
+        for _, vType in ipairs(allowedTypes) do
+            if vehicleType == vType then
+                allowed = true
+                break
+            end
+        end
+        if not allowed then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    end
 
     if GetPedInVehicleSeat(vehicle, -1) ~= GetPlayerPed(src) then
         TriggerClientEvent('ox_lib:notify', src, {
@@ -128,7 +194,18 @@ RegisterNetEvent('territories:server:spawnVehicle', function(territoryId, vehicl
     end
     
     local gang = Player.PlayerData.gang.name
-    if not Utils.hasAccess(territory, gang) then return end
+    if Config.Garage.requireControl then
+        if territory.control ~= gang then
+            TriggerClientEvent('ox_lib:notify', src, {
+                title = locale('error'),
+                description = locale('no_access'),
+                type = 'error'
+            })
+            return
+        end
+    else
+        if not Utils.hasAccess(territory, gang) then return end
+    end
     
     local vehicle = MySQL.single.await('SELECT * FROM territory_vehicles WHERE id = ? AND territory_id = ? AND gang = ?', {
         vehicleId, territoryId, gang

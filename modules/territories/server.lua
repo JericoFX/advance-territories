@@ -1,40 +1,51 @@
-local QBCore = exports['qb-core']:GetCoreObject()
 local sync = require 'modules.sync.server'
 
 local function updateTerritoryControl(zoneId, newGang)
     local territory = Territories[zoneId]
     if not territory then return end
-    
+
     territory.control = newGang
     sync.updateTerritoryControl(zoneId, newGang)
-    
+
     -- Database update
-    MySQL.update('UPDATE territories SET control = ? WHERE zone_id = ?', {newGang, zoneId})
+    MySQL.update('UPDATE territories SET control = ? WHERE zone_id = ?', { newGang, zoneId })
 end
 
 local function adjustTerritoryInfluence(zoneId, amount)
     local territory = Territories[zoneId]
     if not territory then return end
-    
+
     territory.influence = math.max(territory.influence + amount, Config.Territory.control.minInfluence)
     sync.updateTerritoryInfluence(zoneId, territory.influence)
-    
+
     -- Database update
-    MySQL.update('UPDATE territories SET influence = ? WHERE zone_id = ?', {territory.influence, zoneId})
+    MySQL.update('UPDATE territories SET influence = ? WHERE zone_id = ?', { territory.influence, zoneId })
 end
 
 --- Check gang and police presence to update influence
 local function checkGangPresence(zoneId)
     local territory = Territories[zoneId]
     if not territory then return end
-    
+
     local controllingGang = territory.control
-    
-    if controllingGang == 'neutral' then return end
-    
+
+    -- if controllingGang == 'neutral' then return end
+
+    if Config.Debug and controllingGang ~= 'neutral' then
+        local gangMembers = GetGangMembersInZone(zoneId, controllingGang)
+        if gangMembers > 0 then
+            if territory.influence ~= Config.Territory.control.maxInfluence then
+                territory.influence = Config.Territory.control.maxInfluence
+                sync.updateTerritoryInfluence(zoneId, territory.influence)
+                MySQL.update('UPDATE territories SET influence = ? WHERE zone_id = ?', { territory.influence, zoneId })
+            end
+            return
+        end
+    end
+
     local gangMembers = GetGangMembersInZone(zoneId, controllingGang)
     local policeMembers = GetPoliceInZone(zoneId)
-    
+
     if gangMembers >= Config.Territory.control.minMembers then
         if policeMembers >= Config.Police.minOnDuty then
             adjustTerritoryInfluence(zoneId, -Config.Territory.control.pointsPerPolice * policeMembers)
@@ -44,7 +55,7 @@ local function checkGangPresence(zoneId)
     else
         adjustTerritoryInfluence(zoneId, -Config.Territory.control.pointsPerTick)
     end
-    
+
     local maxInfluence = Config.Territory.control.maxInfluence
     if territory.influence >= maxInfluence then
         updateTerritoryControl(zoneId, controllingGang)
@@ -54,7 +65,7 @@ end
 CreateThread(function()
     Wait(1000)
     sync.initializeTerritories()
-    
+
     while true do
         Wait(Config.Territory.influenceTick)
         for zoneId, territory in pairs(Territories) do
@@ -64,7 +75,7 @@ CreateThread(function()
 end)
 
 --- On player death within a territory, update influence
-RegisterNetEvent('territories:server:onPlayerDeath', function(zoneId, killerGang)
+AddEventHandler('territories:server:onPlayerDeath', function(zoneId, killerGang)
     local territory = Territories[zoneId]
     if not territory then return end
 
