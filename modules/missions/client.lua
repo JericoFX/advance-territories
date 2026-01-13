@@ -93,6 +93,9 @@ RegisterNetEvent('territories:client:startMission', function(missionType, missio
         type = missionType,
         data = missionData
     }
+    if type(missionData.completionRadius) == 'number' then
+        completionRadius = missionData.completionRadius
+    end
 
     if missionType == 'vip_escort' then
         setMissionStage('pickup', missionData.pickup, 'mission_pickup')

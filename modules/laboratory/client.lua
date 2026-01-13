@@ -2,6 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local target = require 'modules.target.client'
 local labEntryTargets = {}
 local currentLab = nil
+local labExitTarget = nil
 
 local labCoordinates = {
     weed = vec3(1066.0, -3183.0, -39.0),
@@ -9,6 +10,16 @@ local labCoordinates = {
     meth = vec3(997.0, -3200.0, -36.0),
     crack = vec3(997.0, -3200.0, -36.0)
 }
+
+local function getCurrentTerritory(territoryId, fallback)
+    if Territories and Territories[territoryId] then
+        return Territories[territoryId]
+    end
+    if GlobalState.territories and GlobalState.territories[territoryId] then
+        return GlobalState.territories[territoryId]
+    end
+    return fallback
+end
 
 local function createLabEntryTargets()
     for territoryId, territory in pairs(GlobalState.territories or {}) do
@@ -27,7 +38,12 @@ local function createLabEntryTargets()
                         label = locale('enter_laboratory'),
                         canInteract = function()
                             local playerData = QBCore.Functions.GetPlayerData()
-                            return Utils.hasAccess(territory, playerData.gang.name)
+                            local currentTerritory = getCurrentTerritory(territoryId, territory)
+                            if not currentTerritory then
+                                return false
+                            end
+                            local gangName = playerData and playerData.gang and playerData.gang.name
+                            return Utils.hasAccess(currentTerritory, gangName)
                         end,
                         onSelect = function()
                             enterLaboratory(territoryId, entry.drugType)
@@ -118,7 +134,12 @@ function createLabExitTarget()
     
     local targetId = 'lab_exit_' .. currentLab.territoryId
     
-    target.addSphereZone({
+    if labExitTarget then
+        target.removeZone(labExitTarget)
+        labExitTarget = nil
+    end
+
+    labExitTarget = target.addSphereZone({
         coords = exitCoords,
         radius = 1.5,
         debug = Config.Debug,
@@ -170,6 +191,10 @@ function exitLaboratory()
         type = 'success'
     })
     
+    if labExitTarget then
+        target.removeZone(labExitTarget)
+        labExitTarget = nil
+    end
     currentLab = nil
 end
 
@@ -189,7 +214,12 @@ RegisterNetEvent('territories:client:addTerritory', function(territoryId, territ
                     label = locale('enter_laboratory'),
                     canInteract = function()
                         local playerData = QBCore.Functions.GetPlayerData()
-                        return Utils.hasAccess(territory, playerData.gang.name)
+                        local currentTerritory = getCurrentTerritory(territoryId, territory)
+                        if not currentTerritory then
+                            return false
+                        end
+                        local gangName = playerData and playerData.gang and playerData.gang.name
+                        return Utils.hasAccess(currentTerritory, gangName)
                     end,
                     onSelect = function()
                         enterLaboratory(territoryId, entry.drugType)
