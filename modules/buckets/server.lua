@@ -28,7 +28,6 @@ RegisterNetEvent('territories:server:requestLabBucket', function(territoryId, la
             return
         end
     end
-    
     local bucketKey = ('%s_%s'):format(gang, labType)
     
     -- Create bucket if doesn't exist

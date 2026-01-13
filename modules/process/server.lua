@@ -1,8 +1,8 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local activeProcesses = {}
 local ProcessConfig = {
-    startDistance = 3.0, -- TODO: align with target radius/config
-    completionDistance = 3.0 -- TODO: align with target radius/config
+    startDistance = Config.Interact and Config.Interact.distance or 3.0,
+    completionDistance = Config.Interact and Config.Interact.distance or 3.0
 }
 
 local ProcessRecipes = {

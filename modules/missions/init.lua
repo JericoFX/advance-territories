@@ -49,7 +49,8 @@ local function generateVIPMission(territoryId)
         dropoff = dropoffPoints[math.random(#dropoffPoints)],
         vipModel = MissionConfig.vipEscort.vipModels[math.random(#MissionConfig.vipEscort.vipModels)],
         reward = MissionConfig.vipEscort.reward,
-        timeLimit = MissionConfig.vipEscort.timeLimit
+        timeLimit = MissionConfig.vipEscort.timeLimit,
+        completionRadius = MissionConfig.completionRadius
     }
 end
 
@@ -73,7 +74,8 @@ local function generateInterceptMission(territoryId)
         return_point = vec4(center.x, center.y, center.z, 0.0),
         vehicleModel = MissionConfig.intercept.vehicleModels[math.random(#MissionConfig.intercept.vehicleModels)],
         reward = MissionConfig.intercept.reward,
-        timeLimit = MissionConfig.intercept.timeLimit
+        timeLimit = MissionConfig.intercept.timeLimit,
+        completionRadius = MissionConfig.completionRadius
     }
 end
 
@@ -93,7 +95,8 @@ local function generateDefenseMission(territoryId)
         enemyCount = enemyCount,
         enemyModels = MissionConfig.defense.enemyModels,
         reward = MissionConfig.defense.reward,
-        timeLimit = MissionConfig.defense.timeLimit
+        timeLimit = MissionConfig.defense.timeLimit,
+        completionRadius = MissionConfig.completionRadius
     }
 end
 
